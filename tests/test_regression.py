@@ -19,6 +19,17 @@ Two run patterns are covered, mirroring ``examples/core_impurity.py``:
                      ``nz_init``; this is the integrated-modelling coupling
                      pattern, and it exercises state hand-off
 
+FACIT neoclassical transport is covered too, in both roles it plays:
+  * the coefficients themselves, ``Dz``/``Vconv`` per charge state, for
+    ``rotation_model`` 0, 1 and 2
+  * a two-species run with **C and W together as intrinsic impurities**,
+    coupled through a shared Zeff(r) built from both species' densities, each
+    then transported with its own FACIT D/V on a flat anomalous background --
+    the chain an integrated model actually uses
+
+``rotation_model=2`` matters especially: it calls ``np.trapz``, removed in
+numpy 2, so this baseline is what will flag the breakage during the migration.
+
 The physics case is defined **entirely inside this file** -- no HDF5, no geqdsk,
 no OMFIT. That keeps the baselines immune to fixes in the input data pipeline
 and lets the tests run before and after the OMFIT removal.
@@ -264,6 +275,179 @@ def run_stepped(imp, n_steps=20):
 
 
 # ---------------------------------------------------------------------------
+# FACIT neoclassical transport
+# ---------------------------------------------------------------------------
+# FACIT works in SI (m, m^-3, m^2/s, m/s); Aurora is CGS. Conversions are
+# Dz * 1e4 -> cm^2/s and Vconv * 1e2 -> cm/s.
+FACIT_CASE = dict(
+    Machi=0.25,          # main-ion Mach number (only used by rotation_model 1/2)
+    Zeff=1.5,
+    Te_Ti=1.0,
+    q0=1.0, q_a=2.0,     # qmag = q0 + q_a * roa**2
+    # FACIT divides by the impurity density, and low charge states of a light
+    # impurity are identically zero across the core. Floor Nimp at a trace
+    # level of ne so the coefficients stay finite -- facit_basic.py makes the
+    # same move with its `c_imp` trace concentration.
+    trace_floor=1e-10,
+    D_anom_cm2s=1e4,     # flat anomalous background the neoclassical part adds to
+    V_anom_cms=0.0,
+)
+ROTATION_MODELS = [0, 1, 2]
+
+
+def _facit_inputs(asim, nz_final):
+    """Assemble FACIT's SI inputs from an Aurora state.
+
+    ``roa`` is taken as ``rvol / rvol_lcfs``. For a real equilibrium the
+    mid-plane r/a and the volume radius differ; here the case is synthetic and
+    the choice only has to be fixed, not exact.
+    """
+    m = (asim.rvol_grid <= asim.rvol_lcfs) & (asim.rvol_grid > 0.0)
+    roa = asim.rvol_grid[m] / asim.rvol_lcfs
+    amin_m = asim.rvol_lcfs / 100.0
+    R0_m = asim.Raxis_cm / 100.0
+    r_m = roa * amin_m
+    Ti = asim._Te[-1][m]                       # eV  (Ti = Te in this case)
+    Ni = asim._ne[-1][m] * 1e6                 # cm^-3 -> m^-3
+    return dict(
+        mask=m, roa=roa, r_m=r_m, amin_m=amin_m, R0_m=R0_m,
+        Ti=Ti, Ni=Ni,
+        gradTi=np.gradient(Ti, r_m), gradNi=np.gradient(Ni, r_m),
+        qmag=FACIT_CASE["q0"] + FACIT_CASE["q_a"] * roa**2,
+        floor=FACIT_CASE["trace_floor"] * Ni,
+        nz=nz_final,
+    )
+
+
+def _facit_coefficients(asim, inp, rotation_model):
+    """Dz [m^2/s] and Vconv [m/s] per charge state on the core grid."""
+    import aurora
+
+    nZ = asim.Z_imp + 1
+    Dz = np.zeros((len(inp["roa"]), nZ))
+    Vz = np.zeros_like(Dz)
+    Machi = FACIT_CASE["Machi"] if rotation_model else 0.0
+    for z in range(1, nZ):
+        Nz = np.maximum(inp["nz"][inp["mask"], z] * 1e6, inp["floor"])
+        fct = aurora.FACIT(
+            inp["roa"], z, asim.A_imp, 1, 2,
+            inp["Ti"], inp["Ni"], Nz, Machi, FACIT_CASE["Zeff"],
+            inp["gradTi"], inp["gradNi"], np.gradient(Nz, inp["r_m"]),
+            inp["amin_m"] / inp["R0_m"], CASE["Baxis"], inp["R0_m"], inp["qmag"],
+            rotation_model=rotation_model, Te_Ti=FACIT_CASE["Te_Ti"],
+        )
+        Dz[:, z] = fct.Dz
+        Vz[:, z] = fct.Vconv
+    return Dz, Vz
+
+
+def _flat_run(imp):
+    """Stage 1: a flat-transport run, used only to give FACIT an nz profile."""
+    import aurora
+
+    nml = _namelist(imp)
+    nml["timing"] = _timing(0.0, CASE["t_end"])
+    asim = aurora.aurora_sim(nml)
+    nr = len(asim.rvol_grid)
+    out = asim.run_aurora(CASE["D_cm2s"] * np.ones(nr),
+                          CASE["V_cms"] * np.ones(nr))
+    return asim, np.maximum(out["nz"][:, :, -1], 0.0)
+
+
+def run_facit(imp, rotation_model):
+    """Freeze the FACIT coefficients for a fixed plasma state."""
+    asim, nz = _flat_run(imp)
+    inp = _facit_inputs(asim, nz)
+    Dz, Vz = _facit_coefficients(asim, inp, rotation_model)
+    return dict(roa=inp["roa"], Dz=Dz, Vconv=Vz,
+                Dz_max=np.array(np.nanmax(Dz)),
+                Vconv_min=np.array(np.nanmin(Vz)))
+
+
+def _transport_with(asim, inp, Dz_si, Vz_si, imp):
+    """Re-run this species with FACIT D/V added to a flat anomalous background."""
+    import aurora
+
+    nr = len(asim.rvol_grid)
+    nZ = asim.Z_imp + 1
+    D_z = np.full((nr, 1, nZ), FACIT_CASE["D_anom_cm2s"])
+    V_z = np.full((nr, 1, nZ), FACIT_CASE["V_anom_cms"])
+    D_z[inp["mask"], 0, :] += Dz_si * 1e4        # m^2/s -> cm^2/s
+    V_z[inp["mask"], 0, :] += Vz_si * 1e2        # m/s   -> cm/s
+
+    nml = _namelist(imp)
+    nml["timing"] = _timing(0.0, CASE["t_end"])
+    asim2 = aurora.aurora_sim(nml)
+    out = asim2.run_aurora(D_z, V_z, times_DV=np.array([0.0]))
+    res = _summarise(asim2, out["nz"], imp)
+    res["D_z"] = D_z[:, 0, :]
+    res["V_z"] = V_z[:, 0, :]
+    res["Dz_si"] = Dz_si
+    res["Vconv_si"] = Vz_si
+    return res
+
+
+def zeff_from_species(nz_by_imp, ne):
+    """Zeff = 1 + sum_species sum_z n_z Z(Z-1) / ne.
+
+    Same expression as :py:meth:`aurora.core.aurora_sim.calc_Zeff`, summed over
+    species rather than over one.
+    """
+    dZ = {}
+    for imp, nz in nz_by_imp.items():
+        Z = np.arange(nz.shape[1])
+        dZ[imp] = (nz * (Z * (Z - 1))[None, :]).sum(1) / ne
+    return 1.0 + sum(dZ.values()), dZ
+
+
+def run_multi_species(rotation_model=2):
+    """C and W as two intrinsic impurities sharing one plasma background.
+
+    Aurora evolves one species per ``aurora_sim``, so "together" means two sims
+    coupled through the quantity they actually share: the effective charge.
+
+      stage 1   flat transport for each species  -> nz_C, nz_W
+      stage 2   Zeff(r) from BOTH species' densities
+      stage 3   FACIT per species, using that shared Zeff(r)
+      stage 4   re-run each species with its neoclassical D/V
+
+    One Picard pass, deterministic -- not iterated to a fixed point.
+
+    ``rotation_model=2`` for both species is deliberate: at ``rotation_model=0``
+    FACIT ignores Zeff entirely (``CgeoU = 0`` in the poloidally symmetric
+    limit, facit.py:344), so the species coupling under test would be a no-op.
+    """
+    sims, nz0 = {}, {}
+    for imp in IMPURITIES:
+        asim, nz = _flat_run(imp)
+        sims[imp], nz0[imp] = asim, nz
+
+    ne = sims[IMPURITIES[0]]._ne[-1]                   # shared background
+    for imp in IMPURITIES[1:]:
+        assert np.allclose(ne, sims[imp]._ne[-1]), "species see different ne"
+
+    Zeff, dZ = zeff_from_species(nz0, ne)
+
+    out = {"Zeff": Zeff, "ne": ne}
+    for imp in IMPURITIES:
+        out[f"dZeff_{imp}"] = dZ[imp]
+    saved = FACIT_CASE["Zeff"]
+    try:
+        for imp in IMPURITIES:
+            asim = sims[imp]
+            inp = _facit_inputs(asim, nz0[imp])
+            FACIT_CASE["Zeff"] = Zeff[inp["mask"]]     # shared, radially varying
+            Dz_si, Vz_si = _facit_coefficients(asim, inp, rotation_model)
+            res = _transport_with(asim, inp, Dz_si, Vz_si, imp)
+            for k in ("nz", "line_rad", "cont_rad", "n_conf", "D_z", "V_z",
+                      "Dz_si", "Vconv_si", "rhop", "rvol", "t_slices"):
+                out[f"{imp}_{k}"] = res[k]
+    finally:
+        FACIT_CASE["Zeff"] = saved
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Baseline I/O
 # ---------------------------------------------------------------------------
 def baseline_path(name):
@@ -493,6 +677,70 @@ def test_negative_density_undershoot(result):
         f"{ref_c:.6e} -> {now_c:.6e}")
 
 
+@pytest.mark.parametrize("imp", IMPURITIES)
+@pytest.mark.parametrize("rm", ROTATION_MODELS)
+def test_facit_coefficients(imp, rm):
+    """Neoclassical Dz and Vconv per charge state.
+
+    rotation_model=2 additionally guards the numpy-2 migration: it calls
+    np.trapz, which numpy >= 2 removed.
+    """
+    name = f"{imp}_facit_rm{rm}"
+    r = _cached(name, run_facit, imp, rm)
+    b = load_baseline(name)
+    assert np.isfinite(r["Dz"]).all(), f"{name}: non-finite Dz"
+    assert np.isfinite(r["Vconv"]).all(), f"{name}: non-finite Vconv"
+    assert_matches(b["roa"], r["roa"], f"{name}: roa grid")
+    assert_matches(b["Dz"], r["Dz"], f"{name}: FACIT Dz [m^2/s]")
+    assert_matches(b["Vconv"], r["Vconv"], f"{name}: FACIT Vconv [m/s]")
+
+
+def test_facit_multi_species(rotation_model=2):
+    """C and W as two intrinsic impurities, coupled through a shared Zeff.
+
+    Freezes the whole chain: two flat runs -> combined Zeff(r) -> FACIT per
+    species with that Zeff -> unit conversion -> charge-state-resolved D/V ->
+    two transport runs.
+    """
+    name = "multi_species"
+    r = _cached(name, run_multi_species, rotation_model)
+    b = load_baseline(name)
+
+    assert_matches(b["Zeff"], r["Zeff"], "multi: Zeff(r)")
+    for imp in IMPURITIES:
+        assert_matches(b[f"dZeff_{imp}"], r[f"dZeff_{imp}"],
+                       f"multi: Zeff contribution from {imp}")
+        for k, unit in (("Dz_si", "m^2/s"), ("Vconv_si", "m/s"),
+                        ("D_z", "cm^2/s"), ("V_z", "cm/s")):
+            assert_matches(b[f"{imp}_{k}"], r[f"{imp}_{k}"],
+                           f"multi/{imp}: {k} [{unit}]")
+        for k in ("nz", "line_rad", "cont_rad", "n_conf"):
+            assert_matches(b[f"{imp}_{k}"], r[f"{imp}_{k}"], f"multi/{imp}: {k}")
+
+    # both species must actually contribute to Zeff, else the coupling is idle
+    for imp in IMPURITIES:
+        assert np.nanmax(r[f"dZeff_{imp}"]) > 1e-3, \
+            f"multi: {imp} contributes nothing to Zeff"
+    assert np.nanmin(r["Zeff"]) >= 1.0, "multi: Zeff < 1 is unphysical"
+
+
+def test_multi_species_differs_from_single(rotation_model=2):
+    """The shared Zeff must change the answer versus a single-species run.
+
+    Guards against the coupling silently doing nothing -- e.g. if Zeff were
+    dropped, or a rotation model that ignores it were selected.
+    """
+    r = _cached("multi_species", run_multi_species, rotation_model)
+    for imp in IMPURITIES:
+        solo = _cached(f"{imp}_facit_rm{rotation_model}", run_facit,
+                       imp, rotation_model)
+        peak = np.nanmax(np.abs(solo["Dz"]))
+        dev = np.nanmax(np.abs(r[f"{imp}_Dz_si"] - solo["Dz"])) / max(peak, 1e-300)
+        assert dev > 1e-6, (
+            f"{imp}: multi-species Dz is indistinguishable from the "
+            f"single-species run (rel dev {dev:.2e}) -- Zeff coupling is idle")
+
+
 # ---------------------------------------------------------------------------
 # Baseline regeneration
 # ---------------------------------------------------------------------------
@@ -511,6 +759,15 @@ def _regenerate():
         print(" done")
     print("  C: stepped ...", end="", flush=True)
     written.append(save_baseline("C_stepped", run_stepped("C")))
+    print(" done")
+    for imp in IMPURITIES:
+        for rm in ROTATION_MODELS:
+            print(f"  {imp}: FACIT rm={rm} ...", end="", flush=True)
+            written.append(save_baseline(f"{imp}_facit_rm{rm}",
+                                         run_facit(imp, rm)))
+            print(" done")
+    print("  C+W: FACIT multi-species (shared Zeff) ...", end="", flush=True)
+    written.append(save_baseline("multi_species", run_multi_species()))
     print(" done")
     print("\nwritten:")
     for p in written:
