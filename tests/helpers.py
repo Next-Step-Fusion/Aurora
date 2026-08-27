@@ -62,7 +62,7 @@ def apply_style():
     })
 
 
-def outdir(path="tests/output"):
+def outdir(path="outputs"):
     os.makedirs(path, exist_ok=True)
     return path
 

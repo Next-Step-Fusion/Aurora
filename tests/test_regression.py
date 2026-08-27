@@ -47,6 +47,12 @@ Tolerance can be relaxed for a cross-version comparison, e.g. after moving to
 numpy 2:
 
     AURORA_REGRESSION_RTOL=1e-6 python -m pytest tests/test_regression.py -v
+
+Optional figures -- current run solid, stored baseline dashed, exactly as in
+tests/test_with_omfit.py. Off by default; written to ``outputs/``:
+
+    python -m pytest tests/test_regression.py --plot
+    python -m pytest tests/test_regression.py --plot --plot-dir=some/where
 """
 
 import json
@@ -72,6 +78,11 @@ ATOL_FRAC = float(os.environ.get("AURORA_REGRESSION_ATOL_FRAC", "1e-11"))
 
 N_SLICES = 5          # time slices stored at full radial/charge resolution
 IMPURITIES = ["C", "W"]
+
+# Set by conftest's --plot / --plot-dir, or by AURORA_PLOT_DIR when this file is
+# run as a script. None means "no figures". Default directory is outputs/.
+PLOT_DIR = os.environ.get("AURORA_PLOT_DIR") or (
+    "outputs" if os.environ.get("AURORA_PLOT") else None)
 
 pytestmark = pytest.mark.regression
 
@@ -428,7 +439,8 @@ def run_multi_species(rotation_model=2):
 
     Zeff, dZ = zeff_from_species(nz0, ne)
 
-    out = {"Zeff": Zeff, "ne": ne}
+    out = {"Zeff": Zeff, "ne": ne,
+           "rhop": sims[IMPURITIES[0]].rhop_grid}
     for imp in IMPURITIES:
         out[f"dZeff_{imp}"] = dZ[imp]
     saved = FACIT_CASE["Zeff"]
@@ -439,6 +451,7 @@ def run_multi_species(rotation_model=2):
             FACIT_CASE["Zeff"] = Zeff[inp["mask"]]     # shared, radially varying
             Dz_si, Vz_si = _facit_coefficients(asim, inp, rotation_model)
             res = _transport_with(asim, inp, Dz_si, Vz_si, imp)
+            out[f"{imp}_roa"] = inp["roa"]
             for k in ("nz", "line_rad", "cont_rad", "n_conf", "D_z", "V_z",
                       "Dz_si", "Vconv_si", "rhop", "rvol", "t_slices"):
                 out[f"{imp}_{k}"] = res[k]
@@ -470,7 +483,8 @@ def _meta():
 
 def save_baseline(name, data):
     os.makedirs(BASELINE_DIR, exist_ok=True)
-    np.savez_compressed(baseline_path(name), _meta=np.array(_meta()), **data)
+    keep = {k: v for k, v in data.items() if not k.startswith("_")}
+    np.savez_compressed(baseline_path(name), _meta=np.array(_meta()), **keep)
     return baseline_path(name)
 
 
@@ -512,6 +526,41 @@ def assert_matches(ref, tst, what, rtol=None, atol=None):
         f"(array peak {peak:.6e})\n"
         f"  max |diff| over array = {diff.max():.6e}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Optional figures
+# ---------------------------------------------------------------------------
+def _plot(kind, name, ref, now, **kw):
+    """Write figures for one case, if --plot was given.
+
+    Called *before* the assertions so that a failing comparison still leaves the
+    picture. Never allowed to break a test: plotting problems are reported and
+    swallowed.
+    """
+    if PLOT_DIR is None:
+        return []
+    try:
+        import regression_plots as P
+
+        out = P.outdir(PLOT_DIR)
+        made = []
+        if kind == "profiles":
+            imp = kw["imp"]
+            made.append(P.plot_profiles(name, ref, now, out, imp))
+            made.append(P.plot_radiation(name, ref, now, out))
+            made.append(P.plot_traces(name, ref, now, out))
+            made.append(P.animate_profiles(name, ref, now, out, imp))
+        elif kind == "facit":
+            made.append(P.plot_facit(name, ref, now, out, kw["imp"]))
+        elif kind == "multi":
+            made.append(P.plot_multi_species(ref, now, out, IMPURITIES))
+        print(f"\n  [plot] {name}: " + ", ".join(os.path.basename(m)
+                                                 for m in made))
+        return made
+    except Exception as exc:                       # never fail a test on a plot
+        print(f"\n  [plot] {name}: skipped ({type(exc).__name__}: {exc})")
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -562,6 +611,7 @@ def test_impurity_density(result):
     """nz(t, z, r) at N_SLICES time slices, full radial/charge resolution."""
     imp, r = result
     b = load_baseline(imp)
+    _plot("profiles", imp, b, r, imp=imp)
     assert_matches(b["t_slices"], r["t_slices"], f"{imp}: slice times")
     assert_matches(b["nz"], r["nz"], f"{imp}: nz(t,z,r)")
 
@@ -608,6 +658,7 @@ def test_external_grid_path(result):
     """
     imp, r = result
     b = load_baseline(imp + "_ext")
+    _plot("profiles", imp + "_ext", b, r, imp=imp)
     assert_matches(b["rvol"], r["rvol"], f"{imp} ext: rvol_grid")
     assert_matches(b["rhop"], r["rhop"], f"{imp} ext: rhop_grid")
     assert_matches(b["nz"], r["nz"], f"{imp} ext: nz(t,z,r)")
@@ -688,6 +739,7 @@ def test_facit_coefficients(imp, rm):
     name = f"{imp}_facit_rm{rm}"
     r = _cached(name, run_facit, imp, rm)
     b = load_baseline(name)
+    _plot("facit", name, b, r, imp=imp)
     assert np.isfinite(r["Dz"]).all(), f"{name}: non-finite Dz"
     assert np.isfinite(r["Vconv"]).all(), f"{name}: non-finite Vconv"
     assert_matches(b["roa"], r["roa"], f"{name}: roa grid")
@@ -705,6 +757,7 @@ def test_facit_multi_species(rotation_model=2):
     name = "multi_species"
     r = _cached(name, run_multi_species, rotation_model)
     b = load_baseline(name)
+    _plot("multi", name, b, r)
 
     assert_matches(b["Zeff"], r["Zeff"], "multi: Zeff(r)")
     for imp in IMPURITIES:
@@ -776,6 +829,10 @@ def _regenerate():
 
 
 if __name__ == "__main__":
+    if "--plot" in sys.argv:
+        i = sys.argv.index("--plot")
+        PLOT_DIR = (sys.argv[i + 1] if len(sys.argv) > i + 1
+                    and not sys.argv[i + 1].startswith("-") else "outputs")
     if "--regenerate" in sys.argv:
         _regenerate()
     else:
