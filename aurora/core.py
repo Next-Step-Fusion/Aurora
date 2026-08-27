@@ -226,7 +226,15 @@ class aurora_sim:
             )
 
         # create radial grid
-        grid_params = grids_utils.create_radial_grid(self.namelist, plot=False)
+        if self.namelist.get("rvol_grid", None) is not None:
+            # externally-supplied radial grid, e.g. built from the flux-surface
+            # volumes of a free-boundary equilibrium / transport solver.
+            # pro/qpr/prox are derived numerically -- see grids_utils.grid_from_rvol
+            grid_params = grids_utils.grid_from_rvol(
+                self.namelist["rvol_grid"], dr_0=self.namelist.get("dr_0", None)
+            )
+        else:
+            grid_params = grids_utils.create_radial_grid(self.namelist, plot=False)
         self.rvol_grid, self.pro_grid, self.qpr_grid, self.prox_param = grid_params
 
         if self.geqdsk is not None:
@@ -235,6 +243,13 @@ class aurora_sim:
                 self.rvol_grid
             )
             self.rhop_grid[0] = 0.0  # enforce on axis
+        elif self.namelist.get("rhop_grid", None) is not None:
+            # externally-supplied rho_pol mapping. Give this whenever the kinetic
+            # profiles are on rho_pol and no geqdsk is passed -- otherwise the
+            # rho_vol fallback below silently places them on the wrong surfaces.
+            self.rhop_grid = np.asarray(self.namelist["rhop_grid"], dtype=float)
+            if len(self.rhop_grid) != len(self.rvol_grid):
+                raise ValueError("rhop_grid must have the same length as rvol_grid")
         else:
             # use rho_vol = rvol/rvol_lcfs
             self.rhop_grid = self.rvol_grid / self.rvol_lcfs
