@@ -587,7 +587,7 @@ def get_main_ion_dens(ne_cm3, ions, rhop_plot=None):
     return ni_cm3
 
 def read_adf15(path, order=1):
-    """Read photon emissivity coefficients (PECs) from an ADAS ADF15 file.
+    r"""Read photon emissivity coefficients (PECs) from an ADAS ADF15 file.
 
     Returns a `pandas.DataFrame` object describing all transitions
     available within the chosen ADF15 file.
@@ -1032,7 +1032,7 @@ def plot_pec(transition, ax=None, plot_3d=False):
         if ax is None:
             ax1.set_xlabel("$log_{10}(n_e)$ [cm$^{-3}$]")
             ax1.set_ylabel("$log_{10}(T_e)$ [eV]")
-            ax1.set_zlabel("PEC [photons $\cdot \mathrm{cm^3/s}$]")
+            ax1.set_zlabel(r"PEC [photons $\cdot \mathrm{cm^3/s}$]")
 
     else:
         # plot in 2D
@@ -1047,7 +1047,7 @@ def plot_pec(transition, ax=None, plot_3d=False):
                     temp, PEC_pnts[ine, :], ls, marker="o", mfc=l.get_color(), ms=5.0
                 )
         ax1.set_xlabel(r"$T_e$ [eV]")
-        ax1.set_ylabel("PEC [photons $\cdot \mathrm{cm^3/s}$]")
+        ax1.set_ylabel(r"PEC [photons $\cdot \mathrm{cm^3/s}$]")
         ax1.set_yscale("log")
         ax1.set_xscale("log")
 
@@ -1370,7 +1370,7 @@ def get_cooling_factors(
     plot=True,
     ax=None,
 ):
-    """Calculate cooling coefficients for the given fractional abundances and kinetic profiles.
+    r"""Calculate cooling coefficients for the given fractional abundances and kinetic profiles.
 
     Parameters
     ----------
@@ -1664,7 +1664,7 @@ def adf15_line_identification(pec_files, lines=None, Te_eV=1e3, ne_cm3=5e13, mul
     ax.set_xlim(min(lams) / 1.5, max(lams) * 1.5)
 
     ax.set_xlabel(r"$\lambda$ [$\AA$]")
-    ax.set_ylabel("PEC [phot $\cdot$ cm$^3$/s]")
+    ax.set_ylabel(r"PEC [phot $\cdot$ cm$^3$/s]")
     a_id.set_title(r"$T_e$ = %d eV, $n_e$ = %.2e cm$^{-3}$" % (Te_eV, ne_cm3))
 
     # plot location of certain lines of interest
@@ -1748,7 +1748,7 @@ def get_colradpy_pec_prof(
     pec_units=2,
     plot=True,
 ):
-    """Compute radial profile for Photon Emissivity Coefficients (PEC) for lines within the chosen
+    r"""Compute radial profile for Photon Emissivity Coefficients (PEC) for lines within the chosen
     wavelength range using the ColRadPy package. This is an alternative to the option of using
     the :py:func:`~aurora.radiation.read_adf15` function to read PEC data from an ADAS ADF-15 file and
     interpolate results on ne,Te grids.

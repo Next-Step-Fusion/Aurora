@@ -991,8 +991,8 @@ class FACIT:
             averaged QV, dimension of input QV is lowered by 1
         '''
         
-        denom = np.trapz(JV, axis=-1)
-        Qavg  = np.trapz(QV*JV, axis=-1)/denom
+        denom = np.trapezoid(JV, axis=-1)
+        Qavg  = np.trapezoid(QV*JV, axis=-1)/denom
     
         return Qavg
     

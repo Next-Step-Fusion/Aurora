@@ -85,7 +85,7 @@ def line_int_weights(
         asym = 1.0
 
     # compute weights by summing over beam/ray path
-    weights = np.trapz(response[None] * asym, dist_path, axis=2)
+    weights = np.trapezoid(response[None] * asym, dist_path, axis=2)
 
     return weights
 

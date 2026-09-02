@@ -12,21 +12,21 @@ requirements:
   build:
     - {{ compiler('fortran') }}
   host:
-    - python
+    - python >=3.11
     - pip
-    - numpy {{ numpy }}
-    - scipy
-    - matplotlib
+    - numpy >=2.0.0
+    - scipy >=1.13
+    - matplotlib >=3.9
     - requests
-    - pandas
+    - pandas >=2.2.2
 
   run:
-    - python
+    - python >=3.11
     - {{ pin_compatible('numpy') }}
-    - scipy
-    - matplotlib
+    - scipy >=1.13
+    - matplotlib >=3.9
     - requests
-    - pandas
+    - pandas >=2.2.2
     
 test:
   imports:

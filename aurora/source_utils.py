@@ -151,7 +151,7 @@ def get_source_time_history(namelist, Raxis_cm, time, plot = False):
         fig, ax = plt.subplots()
         fig.suptitle('External particle source')
         ax.set_xlabel('time [s]')
-        ax.set_ylabel('$\Gamma_{{source}}$ [s$^{{-1}}$]'),
+        ax.set_ylabel(r'$\Gamma_{{source}}$ [s$^{{-1}}$]'),
         ax.plot(time, source)
         ax.set_ylim(0, None)
         ax.set_xlim(time[0],time[-1])
@@ -267,7 +267,7 @@ def lbo_source_function(t_start, t_rise, t_fall, n_particles=1.0, time_vec=None)
         lbo = np.exp((1 - 4 * tf * (T - ts) / tr**2) / (4 * (tf / tr) ** 2)) * (erfc((T - ts) / tr - 1 / (2 * tf / tr)) - 2)
 
         # scale source to correspond to the given total number of particles
-        lbo *= N / np.trapz(lbo, T)
+        lbo *= N / np.trapezoid(lbo, T)
 
         # ensure that source function ends with 0 to avoid numerical issues
         lbo[[0, -1]] = 0

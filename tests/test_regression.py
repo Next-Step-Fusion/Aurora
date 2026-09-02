@@ -27,8 +27,9 @@ FACIT neoclassical transport is covered too, in both roles it plays:
     then transported with its own FACIT D/V on a flat anomalous background --
     the chain an integrated model actually uses
 
-``rotation_model=2`` matters especially: it calls ``np.trapz``, removed in
-numpy 2, so this baseline is what will flag the breakage during the migration.
+``rotation_model=2`` matters especially: it used to call ``np.trapz``, which
+numpy 2 removed. That call is now ``np.trapezoid`` and this baseline is what
+showed the conversion did not move the coefficients.
 
 The physics case is defined **entirely inside this file** -- no HDF5, no geqdsk,
 no OMFIT. That keeps the baselines immune to fixes in the input data pipeline
@@ -733,8 +734,8 @@ def test_negative_density_undershoot(result):
 def test_facit_coefficients(imp, rm):
     """Neoclassical Dz and Vconv per charge state.
 
-    rotation_model=2 additionally guards the numpy-2 migration: it calls
-    np.trapz, which numpy >= 2 removed.
+    rotation_model=2 additionally guards the numpy-2 migration: it integrates
+    with np.trapezoid, which replaced the np.trapz that numpy 2 removed.
     """
     name = f"{imp}_facit_rm{rm}"
     r = _cached(name, run_facit, imp, rm)

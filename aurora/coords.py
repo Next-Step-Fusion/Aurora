@@ -23,7 +23,7 @@
 import numpy as np, sys, os
 from scipy.interpolate import interp1d, RectBivariateSpline
 import copy
-from scipy.ndimage.interpolation import map_coordinates
+from scipy.ndimage import map_coordinates
 from scipy.interpolate import InterpolatedUnivariateSpline
 from . import grids_utils
 
@@ -108,8 +108,8 @@ def vol_average(quant, rhop, geqdsk, method="fs"):
 
 
 def rV_vol_average(quant, r_V):
-    """Calculate a volume average of the given radially-dependent quantity on a r_V grid.
-    This function makes useof the fact that the r_V radial coordinate, defined as
+    r"""Calculate a volume average of the given radially-dependent quantity on a r_V grid.
+    This function makes use of the fact that the r_V radial coordinate, defined as
     :math:`r_V = \sqrt{ V / (2 \pi^2 R_{axis} }`,
     maps shaped volumes onto a circular geometry, making volume averaging a trivial
     operation via

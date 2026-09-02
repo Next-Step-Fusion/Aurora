@@ -10,18 +10,27 @@ urls = { "Homepage" = "https://github.com/fsciortino/Aurora" }
 keywords = ["particle and impurity transport, neutrals, radiation, magnetic confinement fusion"]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
+requires-python = ">=3.11"
 dependencies = [
-    "matplotlib",
-    "numpy<2.0.0",
-    "pandas",
+    # numpy 2 is required: the code uses np.trapezoid, which numpy 1 does not have
+    "numpy>=2.0.0",
+    # scipy 1.13 is the first release supporting numpy 2
+    "scipy>=1.13",
+    # matplotlib 3.9 is the first release supporting numpy 2
+    "matplotlib>=3.9",
+    # pandas 2.2.2 is the first release supporting numpy 2
+    "pandas>=2.2.2",
     "requests",
-    "scipy",
+    "pytest>=9.1.1",
 ]
 
 [build-system]
 # scikit-build-core is used to integrate with CMake
-requires = ["scikit-build-core", "numpy", "setuptools"]
+requires = ["scikit-build-core>=0.8", "numpy>=2.0.0"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]

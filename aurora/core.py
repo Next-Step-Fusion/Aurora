@@ -1222,7 +1222,7 @@ class aurora_sim:
                 self.res['nz'].transpose(1, 0, 2),
                 xlabel=xlabel,
                 ylabel="time [s]",
-                zlabel=f'$n_{{{self.imp}}}$ [$\mathrm{{cm}}$$^{{-3}}$]',
+                zlabel=rf'$n_{{{self.imp}}}$ [$\mathrm{{cm}}$$^{{-3}}$]',
                 plot_title = f'{self.imp} density profiles',
                 labels=[str(i) for i in np.arange(0, self.res['nz'].shape[1])],
                 plot_sum=True,
@@ -1251,7 +1251,7 @@ class aurora_sim:
                     self.rad["line_rad"].transpose(1, 2, 0),
                     xlabel=xlabel,
                     ylabel="time [s]",
-                    zlabel="[$\mathrm{MW}/\mathrm{m}^3$]",
+                    zlabel=r"[$\mathrm{MW}/\mathrm{m}^3$]",
                     plot_title = f'{self.imp} line radiation',
                     labels=[str(i) for i in np.arange(0, self.res['nz'].shape[1])],
                     plot_sum=True,
@@ -1905,7 +1905,7 @@ class aurora_sim:
             ax1[0, 0].plot(self.time_out, reservoirs["plasma_removal_rate"], label="Removal rate", color = red, linestyle = 'dashed')
             ax1[0, 0].plot(self.time_out, reservoirs["net_plasma_flow"], label="Net sum", color = 'black', linestyle = 'dashed')
             ax1[0, 0].set_title('Plasma particles balance', loc='right', fontsize = 11)
-            ax1[0, 0].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[0, 0].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[0, 0].legend(loc="best", fontsize = 9).set_draggable(True)
 
             if self.namelist["phys_volumes"]:
@@ -1913,7 +1913,7 @@ class aurora_sim:
                                color = blue)
                 if ylim:
                     ax1[0, 1].set_ylim(0,np.max(reservoirs["particle_density_in_plasma"])*1.15)
-                ax1[0, 1].set_ylabel('[$\mathrm{cm}^{-3}$]')
+                ax1[0, 1].set_ylabel(r'[$\mathrm{cm}^{-3}$]')
             else:
                 ax1[0, 1].plot(self.time_out, reservoirs["particles_in_plasma"],
                                color = blue)
@@ -1926,7 +1926,7 @@ class aurora_sim:
                 ax1[0, 2].plot(self.time_out, reservoirs["impurity_radiation"]/1e6, color = 'red')
                 if ylim:
                     ax1[0, 2].set_ylim(0,np.max(reservoirs["impurity_radiation"]/1e6)*1.15)
-                ax1[0, 2].set_ylabel('[$\mathrm{MW}$]')
+                ax1[0, 2].set_ylabel(r'[$\mathrm{MW}$]')
                 ax1[0, 2].set_title('Core radiation', loc='right', fontsize = 11) 
 
             ax1[1, 0].plot(self.time_out, reservoirs["total_flux_mainwall"], label="Tot. flux to main wall", color = blue)
@@ -1934,21 +1934,21 @@ class aurora_sim:
             ax1[1, 0].plot(self.time_out, reservoirs["limiter_loss"], label="Parallel limiter loss", color = light_blue, linestyle = 'dotted')
             if ylim:
                 ax1[1, 0].set_ylim(0,np.max(reservoirs["total_flux_mainwall"])*1.15)
-            ax1[1, 0].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[1, 0].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[1, 0].set_title('Main wall fluxes', loc='right', fontsize = 11)
             ax1[1, 0].legend(loc="best", fontsize = 9).set_draggable(True)
 
             ax1[1, 1].plot(self.time_out, reservoirs["mainwall_recycling"], color = light_green)
             if ylim:
                 ax1[1, 1].set_ylim(0,np.max(reservoirs["mainwall_recycling"])*1.15)
-            ax1[1, 1].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[1, 1].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[1, 1].set_title('Main wall recycling rate', loc='right', fontsize = 11)
 
             if self.namelist["phys_surfaces"]:
                 ax1[1, 2].plot(self.time_out, reservoirs["particle_density_stuck_at_main_wall"], label="Particles stuck", color = light_grey, linestyle = 'dashed')
                 ax1[1, 2].plot(self.time_out, reservoirs["particle_density_retained_at_main_wall"],
                     label="Particles retained", color = light_grey)
-                ax1[1, 2].set_ylabel('[$\mathrm{cm}^{-2}$]')              
+                ax1[1, 2].set_ylabel(r'[$\mathrm{cm}^{-2}$]')              
             else:
                 ax1[1, 2].plot(self.time_out, reservoirs["particles_stuck_at_main_wall"], label="Particles stuck", color = light_grey, linestyle = 'dashed')
                 ax1[1, 2].plot(self.time_out, reservoirs["particles_retained_at_main_wall"],
@@ -1969,21 +1969,21 @@ class aurora_sim:
                            label="Parallel loss", color = blue) 
             if ylim:
                 ax1[2, 0].set_ylim(0,np.max(reservoirs["parallel_loss"]+reservoirs["screened_divertor_backflow"])*1.15)
-            ax1[2, 0].set_ylabel('[$\mathrm{s}^{-1}$]') 
+            ax1[2, 0].set_ylabel(r'[$\mathrm{s}^{-1}$]') 
             ax1[2, 0].set_title('Divertor fluxes', loc='right', fontsize = 11)
             ax1[2, 0].legend(loc="best", fontsize = 9).set_draggable(True)
 
             ax1[2, 1].plot(self.time_out, reservoirs["divwall_recycling"], color = green)
             if ylim:
                 ax1[2, 1].set_ylim(0,np.max(reservoirs["divwall_recycling"])*1.15)
-            ax1[2, 1].set_ylabel('[$\mathrm{s}^{-1}$]') 
+            ax1[2, 1].set_ylabel(r'[$\mathrm{s}^{-1}$]') 
             ax1[2, 1].set_title('Divertor wall recycling rate', loc='right', fontsize = 11)
             
             if self.namelist["phys_surfaces"]:
                 ax1[2, 2].plot(self.time_out, reservoirs["particle_density_stuck_at_div_wall"], label="Particles stuck", color = grey, linestyle = 'dashed')
                 ax1[2, 2].plot(self.time_out, reservoirs["particle_density_retained_at_div_wall"],
                     label="Particles retained", color = grey)
-                ax1[2, 2].set_ylabel('[$\mathrm{cm}^{-2}$]')              
+                ax1[2, 2].set_ylabel(r'[$\mathrm{cm}^{-2}$]')              
             else:
                 ax1[2, 2].plot(self.time_out, reservoirs["particles_stuck_at_div_wall"], label="Particles stuck", color = grey, linestyle = 'dashed')
                 ax1[2, 2].plot(self.time_out, reservoirs["particles_retained_at_div_wall"],
@@ -2004,7 +2004,7 @@ class aurora_sim:
                            label="Backflow rate", color = green)
             if ylim:
                 ax1[3, 0].set_ylim(0,np.max(reservoirs["divertor_backflow"]+reservoirs["screened_divertor_backflow"])*1.15)
-            ax1[3, 0].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[3, 0].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[3, 0].set_title('Divertor backflow rates', loc='right', fontsize = 11)
             ax1[3, 0].legend(loc="best", fontsize = 9).set_draggable(True)
 
@@ -2012,7 +2012,7 @@ class aurora_sim:
                            label="Leakage to core", color = light_green)
             if ylim and np.max(reservoirs["pump_leakage"])!=0:
                 ax1[3, 1].set_ylim(0,np.max(reservoirs["pump_leakage"])*1.15)
-            ax1[3, 1].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[3, 1].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[3, 1].set_title('Pump leakage rates', loc='right', fontsize = 11)
             ax1[3, 1].legend(loc="best", fontsize = 9).set_draggable(True)
             
@@ -2024,7 +2024,7 @@ class aurora_sim:
                            label="Pump reservoir", color = light_green)
                 if ylim:
                     ax1[3, 2].set_ylim(0,np.max(reservoirs["particle_density_in_divertor"])*1.15)
-                ax1[3, 2].set_ylabel('[$\mathrm{cm}^{-3}$]')
+                ax1[3, 2].set_ylabel(r'[$\mathrm{cm}^{-3}$]')
             else:
                 ax1[3, 2].plot(self.time_out, reservoirs["particles_in_divertor"],
                            label="Div. reservoir", color = green)
@@ -2038,7 +2038,7 @@ class aurora_sim:
             ax1[3, 2].legend(loc="best", fontsize = 9).set_draggable(True)
 
             for ii in [0, 1, 2]:
-                ax1[3, ii].set_xlabel('$\mathrm{time}$ [$\mathrm{s}$]')
+                ax1[3, ii].set_xlabel(r'$\mathrm{time}$ [$\mathrm{s}$]')
             ax1[3, 0].set_xlim(self.time_out[[0, -1]])
             
             plt.tight_layout()
@@ -2052,7 +2052,7 @@ class aurora_sim:
             
             fig.suptitle('Particle conservation',fontsize=14)
 
-            ax2.set_xlabel('$\mathrm{time}$ [$\mathrm{s}$]')
+            ax2.set_xlabel(r'$\mathrm{time}$ [$\mathrm{s}$]')
 
             ax2.plot(self.time_out, all_particles, label="Particles in the plasma", color = blue)
             ax2.plot(self.time_out, reservoirs["particles_in_divertor"], label="Particles in the divertor chamber", color = green)
@@ -2068,8 +2068,8 @@ class aurora_sim:
                 print("Warning: significant error in particle conservation!")
 
             Ntot = reservoirs["integ_source"][-1]
-            dN = np.trapz((reservoirs["total"] / Ntot - reservoirs["integ_source"] / Ntot) ** 2, self.time_out)
-            dN /= np.trapz((reservoirs["integ_source"] / Ntot) ** 2, self.time_out)
+            dN = np.trapezoid((reservoirs["total"] / Ntot - reservoirs["integ_source"] / Ntot) ** 2, self.time_out)
+            dN /= np.trapezoid((reservoirs["integ_source"] / Ntot) ** 2, self.time_out)
             print('Particle conservation error %.1f%%' % (np.sqrt(dN) * 100))
         
             ax2.set_xlim(self.time_out[[0, -1]])
@@ -2085,7 +2085,7 @@ class aurora_sim:
 
 
     def centrifugal_asym(self, omega, Zeff, plot=False):
-         """Estimate impurity poloidal asymmetry effects from centrifugal forces. See notes the
+         r"""Estimate impurity poloidal asymmetry effects from centrifugal forces. See notes the
          :py:func:`~aurora.synth_diags.centrifugal_asymmetry` function docstring for details.
 
          In this function, we use the average Z of the impurity species in the Aurora simulation result, using only
