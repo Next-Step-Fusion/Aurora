@@ -411,7 +411,7 @@ def get_HFS_LFS(geqdsk, rho_pol=None):
     Parameters
     ----------
     geqdsk : dict
-        Dictionary containing the g-EQDSK file as processed by the `omfit_classes.omfit_eqdsk`.
+        Dictionary containing the processed g-EQDSK equilibrium.
     rho_pol : array, optional
         Array corresponding to a grid in sqrt of normalized poloidal flux for which a
         corresponding rvol grid should be found. If left to None, an arbitrary grid will be
@@ -473,7 +473,7 @@ def get_rhopol_rvol_mapping(geqdsk, rho_pol=None):
     Parameters
     ----------
     geqdsk : dict
-        Dictionary containing the g-EQDSK file as processed by `omfit_classes.omfit_eqdsk`. 
+        Dictionary containing the processed g-EQDSK equilibrium. 
     rho_pol : array, optional
         Array corresponding to a grid in sqrt of normalized poloidal flux for which a 
         corresponding rvol grid should be found. If left to None, an arbitrary grid will be 
@@ -674,7 +674,7 @@ def estimate_clen(geqdsk):
     Parameters
     ----------
     geqdsk : dict
-        EFIT g-EQDSK as processed by `omfit_classes.omfit_eqdsk`.
+        Processed EFIT g-EQDSK equilibrium dictionary.
 
     Returns
     -------
@@ -700,59 +700,6 @@ def estimate_clen(geqdsk):
     clen_limiter = round(h / 5.0, 5)  # 1/5th of machine height
 
     return clen_divertor, clen_limiter
-
-
-def estimate_boundary_distance(shot, device, time_ms):
-    """Obtain a simple estimate for the distance between the LCFS and the wall boundary.
-    This requires access to the A_EQDSK on the EFIT01 tree on MDS+. Users who may find that this call
-    does not work for their device may try to adapt the OMFITmdsValue TDI string.
-
-    Parameters
-    ----------
-    shot : int
-        Discharge/experiment number
-    device : str
-        Name of device, e.g. 'C-Mod', 'DIII-D', etc.
-    time_ms : int or float
-        Time at which results for the outer gap should be taken.
-
-    Returns
-    -------
-    bound_sep : float
-        Estimate for the distance between the wall boundary and the separatrix [cm]
-    lim_sep : float
-        Estimate for the distance between the limiter and the separatrix [cm]. This is (quite arbitrarily)
-        taken to be 2/3 of the bound_sep distance.
-    """
-    # import this here, so that it is not required for the whole package
-    from omfit_classes.omfit_mds import OMFITmdsValue
-
-    try:
-        tmp = OMFITmdsValue(
-            server=device,
-            treename="EFIT01",
-            shot=shot,
-            TDI="\\EFIT01::TOP.RESULTS.A_EQDSK.ORIGHT",
-        )  # CMOD format, take ORIGHT
-        assert tmp.check()
-    except Exception:
-        tmp = OMFITmdsValue(
-            server=device,
-            treename="EFIT01",
-            shot=shot,
-            TDI="\\EFIT01::TOP.RESULTS.AEQDSK.GAPOUT",
-        )  # useful variable for many other devices
-  
-    time_vec = tmp.dim_of(0)
-    data_r = tmp.data()
-
-    ind = np.argmin(np.abs(time_vec - time_ms))
-    inds = slice(ind - 3, ind + 3)
-    bound_sep = round(np.mean(data_r[inds]), 3)
-
-    # take separation to limiter to be 2/3 of the separation to the wall boundary
-    lim_sep = round(bound_sep * 2.0 / 3.0, 3)
-    return bound_sep*100, lim_sep*100
 
 
 def vol_int(var, rvol_grid, pro_grid, Raxis_cm, rvol_max=None):

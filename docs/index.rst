@@ -41,9 +41,9 @@ The :py:mod:`aurora.surface` library provides instead functions to load and inte
 
 Aurora also includes a Python version of the FACIT code, described in the Tutorials section of this documentation, which allows users to rapidly estimate neoclassical impurity transport coefficients. This capability is particularly useful in integrated transport modeling, as well as in experimental inference of impurity transport coefficients.
 
-A number of standard tests and examples are provided using a real set of Alcator C-Mod kinetic profiles and geometry. In order to interface with EFIT gEQDSK files, Aurora makes use of the `omfit_eqdsk <https://pypi.org/project/omfit-eqdsk/>`__ package, which offers flexibility to work with data from many devices worldwide. Users may easily substitute this dependence with different magnetic reconstruction packages and/or postprocessing interfaces, if required. Interfacing Aurora with several file formats used throughout the fusion community to store kinetic profiles is simple. 
+A number of standard tests and examples are provided using a real set of Alcator C-Mod kinetic profiles and geometry. Aurora does not read EFIT gEQDSK files itself: it takes an already-processed equilibrium as a plain dictionary, so any magnetic reconstruction package and/or postprocessing interface may be used. Interfacing Aurora with several file formats used throughout the fusion community to store kinetic profiles is simple. 
 
-Aurora was born as a fast forward model of impurity transport, but it can also be useful for synthetic spectroscopic diagnostics and radiation modeling in fusion plasmas. For example, it may be helpful for parameter scans to explore the performance of future devices. The :py:func:`~aurora.radiation.radiation_model` method allows one to use ADAS atomic rates and given kinetic profiles to compute line radiation, bremsstrahlung, continuum and soft-x-ray-filtered radiation. Ionization equilibria can also be computed using the :py:meth:`~aurora.atomic` methods, thus enabling simple "constant-fraction" models where the total density of an impurity species is fixed to a certain percentage of the electron density. Background neutrals, either from the edge or from neutral beam injection, can be analyzed using the :py:mod:`aurora.neutrals` and :py:mod:`aurora.nbi_neutrals` libraries.
+Aurora was born as a fast forward model of impurity transport, but it can also be useful for synthetic spectroscopic diagnostics and radiation modeling in fusion plasmas. For example, it may be helpful for parameter scans to explore the performance of future devices. The :py:func:`~aurora.radiation.radiation_model` method allows one to use ADAS atomic rates and given kinetic profiles to compute line radiation, bremsstrahlung, continuum and soft-x-ray-filtered radiation. Ionization equilibria can also be computed using the :py:meth:`~aurora.atomic` methods, thus enabling simple "constant-fraction" models where the total density of an impurity species is fixed to a certain percentage of the electron density. Background neutrals from neutral beam injection can be analyzed using the :py:mod:`aurora.nbi_neutrals` library.
 
 
 .. figure:: https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Virmalised_18.03.15_%284%29.jpg/1920px-Virmalised_18.03.15_%284%29.jpg
@@ -65,7 +65,6 @@ Documentation contents
    tutorial
    atomic_data
    surface_data
-   external_codes
    facit
    citing
    contacts

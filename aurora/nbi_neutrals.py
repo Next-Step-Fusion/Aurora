@@ -58,8 +58,8 @@ def get_neutrals_fsa(neutrals, geqdsk, debug_plots=True):
 
         It is currently assumed that n=0,1 and 2 beam components are provided by the user.
 
-    geqdsk : dictionary output of `omfit_classes.omfit_eqdsk.OMFITgeqdsk` class
-        gEQDSK post-processed dictionary, as given by `omfit_classes.omfit_eqdsk`.
+    geqdsk : dict
+        Processed gEQDSK dictionary containing the magnetic geometry.
     debug_plots : bool, optional
         If True, various plots are displayed.
 

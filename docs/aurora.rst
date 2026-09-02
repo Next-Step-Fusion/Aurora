@@ -23,13 +23,15 @@ aurora.adas_files module
     :show-inheritance:
 
     
-aurora.animate module
-------------------------------------
+aurora.elements module
+--------------------------------------
 
-.. automodule:: aurora.animate
+.. automodule:: aurora.elements
     :members:
     :undoc-members:
     :show-inheritance:
+
+    
 
 
 aurora.atomic module
@@ -86,13 +88,6 @@ aurora.janev_smith_rates module
     :show-inheritance:
 
 
-aurora.kn1d module
--------------------------------
-
-.. automodule:: aurora.kn1d
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 
 aurora.nbi_neutrals module
@@ -104,22 +99,8 @@ aurora.nbi_neutrals module
     :show-inheritance:
 
 
-aurora.neutrals module
-------------------------------------
-
-.. automodule:: aurora.neutrals
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 
-aurora.oedge module
------------------------------------------
-
-.. automodule:: aurora.oedge
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 
 aurora.plot_tools module
@@ -140,13 +121,6 @@ aurora.radiation module
     :show-inheritance:
 
 
-aurora.solps module
--------------------------------
-
-.. automodule:: aurora.solps
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 
 aurora.source_utils module

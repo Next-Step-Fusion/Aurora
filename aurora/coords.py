@@ -37,16 +37,7 @@ def get_rhop_RZ(R, Z, geqdsk):
     ).ev(Z, R)
 
 
-def vol_average(
-    quant,
-    rhop,
-    method="omfit",
-    geqdsk=None,
-    device=None,
-    shot=None,
-    time=None,
-    return_geqdsk=False,
-):
+def vol_average(quant, rhop, geqdsk, method="fs"):
     """Calculate the volume average of the given radially-dependent quantity on a rhop grid.
 
     Parameters
@@ -56,24 +47,18 @@ def vol_average(
         but other dimensions may be exist afterwards.
     rhop : array, (space,)
         Radial rhop coordinate in cm units.
-    method : {'omfit','fs'}
-        Method to evaluate the volume average. The two options correspond to the way to compute
-        volume averages via the OMFIT fluxSurfaces classes and via a simpler cumulative sum in r_V
-        coordinates. The methods only slightly differ in their results. Note that 'omfit' will fail if
-        rhop extends beyond the LCFS, while method 'fs' can estimate volume averages also into the SOL.
-        Default is method='omfit'.
-    geqdsk : output of the :py:class:`omfit_classes.omfit_eqdsk.OMFITgeqdsk` class, postprocessing the EFIT geqdsk file
-        containing the magnetic geometry. If this is left to None, the function internally tries to fetch
-        it using MDS+ and `omfit_classes.omfit_eqdsk`. In this case, device, shot and time to fetch the equilibrium
-        are required.
-    device : str
-        Device name. Note that routines for this device must be implemented in `omfit_classes.omfit_eqdsk` for this to work.
-    shot : int
-        Shot number of the above device, e.g. 1101014019 for C-Mod.
-    time : float
-        Time at which equilibrium should be fetched in units of ms.
-    return_geqdsk : bool
-        If True, `omfit_classes.omfit_eqdsk` dictionary is also returned
+    geqdsk : dict
+        Processed EFIT geqdsk containing the magnetic geometry. Method 'fs' needs
+        ``geqdsk['fluxSurfaces']['geo']['psin']`` and ``['vol']``; method
+        'fluxsurfaces' additionally needs ``geqdsk['fluxSurfaces']`` to provide a
+        ``volume_integral`` method.
+    method : {'fs','fluxsurfaces'}
+        Method to evaluate the volume average. 'fs' uses a simple cumulative sum in r_V
+        coordinates and needs nothing beyond a plain dictionary; 'fluxsurfaces' delegates to the
+        ``volume_integral`` method of the flux-surface object, if the supplied `geqdsk` carries one.
+        The methods only slightly differ in their results. Note that 'fluxsurfaces' will fail if
+        rhop extends beyond the LCFS, while method 'fs' can estimate volume averages also into the
+        SOL. Default is method='fs'.
 
     Returns
     -------
@@ -81,31 +66,16 @@ def vol_average(
         Volume average of the quantity given as an input, in the same units as in the input.
         If extrapolation beyond the range available from EFIT volume averages over a shorter section
         of the radial grid will be attempted. This does not affect volume averages within the LCFS.
-    geqdsk : dict
-        Only returned if return_geqdsk=True.
     """
-    if time is not None and np.mean(time) < 1e2:
-        print("Input time was likely in the wrong units! It should be in [ms]!")
     if np.max(rhop) > 1.0:
         print(
             "Input rhop goes beyond the LCFS! Results may not be meaningful (and can only be obtained via method=='fs')."
         )
 
     if geqdsk is None:
-        # Fetch device geqdsk from MDS+ and post-process it using the OMFIT geqdsk format.
-        try:
-            from omfit_classes import omfit_eqdsk
-        except:
-            raise ValueError(
-                "Could not import omfit_classes.omfit_eqdsk! Install with pip install omfit_classes"
-            )
-        geqdsk = omfit_eqdsk.OMFITgeqdsk("").from_mdsplus(
-            device=device,
-            shot=shot,
-            time=time,
-            SNAPfile="EFIT01",
-            fail_if_out_of_range=False,
-            time_diff_warning_threshold=20,
+        raise ValueError(
+            "vol_average requires a geqdsk. Aurora no longer fetches equilibria from MDS+; "
+            "load or build the equilibrium yourself and pass it in as a dictionary."
         )
 
     if method == "fs":
@@ -123,8 +93,8 @@ def vol_average(
 
         vol_avg = rV_vol_average(quant[~np.isnan(r_V)], r_V[~np.isnan(r_V)])
 
-    elif method == "omfit":
-        # use fluxSurfaces classes from OMFIT
+    elif method in ("fluxsurfaces", "omfit"):
+        # delegate to the volume_integral method of the flux-surface object, if there is one
         rhopp = np.sqrt(geqdsk["fluxSurfaces"]["geo"]["psin"])
         quantp = interp1d(rhop, quant, bounds_error=False, fill_value="extrapolate")(
             rhopp
@@ -134,10 +104,7 @@ def vol_average(
     else:
         raise ValueError("Input method for volume average could not be recognized")
 
-    if return_geqdsk:
-        return vol_avg, geqdsk
-    else:
-        return vol_avg
+    return vol_avg
 
 
 def rV_vol_average(quant, r_V):
@@ -187,7 +154,7 @@ def rad_coord_transform(x, name_in, name_out, geqdsk):
     name_out: str
         input x coordinate ('rhon','psin','rvol', 'rhop','rhov','Rmid','rmid','r/a')
     geqdsk: dict
-        gEQDSK dictionary, as obtained from the omfit-eqdsk package.
+        Processed gEQDSK dictionary containing the magnetic geometry.
 
     Returns
     -------
@@ -308,9 +275,10 @@ def rhoTheta2RZ(geqdsk, rho, theta, coord_in='rhop', n_line=201):
 
     Parameters
     ----------
-    geqdsk : output of the :py:class:`omfit_classes.omfit_eqdsk.OMFITgeqdsk` class, postprocessing the EFIT geqdsk file
-        containing the magnetic geometry. If this is left to None, the function internally tries to fetch
-        it using MDS+ and `omfit_classes.omfit_eqdsk`. In this case, device, shot and time to fetch the equilibrium 
+    geqdsk : dict
+        Processed EFIT geqdsk containing the magnetic geometry. Must carry the keys
+        'RMAXIS', 'ZMAXIS' and 'AuxQuantities' (with 'R', 'Z' and the rho map for
+        `coord_in`). A file path is not accepted -- parse the g-file yourself.
     rho : np.ndarray
         Values of normalized radial coordinate to consider.
     theta : np.ndarray
@@ -328,9 +296,12 @@ def rhoTheta2RZ(geqdsk, rho, theta, coord_in='rhop', n_line=201):
         Values of the vertical coordinate along flux surfaces.
     '''
     if isinstance(geqdsk, str):
-        from omfit_classes.omfit_eqdsk import OMFITgeqdsk
-        geqdsk = OMFITgeqdsk(geqdsk)
-        
+        raise TypeError(
+            "rhoTheta2RZ needs an already-processed geqdsk dictionary, not a file path. "
+            "Aurora no longer reads g-files itself; parse the equilibrium with the tool of "
+            "your choice and pass a dict carrying 'RMAXIS', 'ZMAXIS' and 'AuxQuantities'."
+        )
+
     line_m = .9 # line length: 0.9 m
     t = np.linspace(0, 1, n_line)**.5*line_m
     c, s = np.cos(theta), np.sin(theta)

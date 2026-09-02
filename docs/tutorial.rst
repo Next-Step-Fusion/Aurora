@@ -116,15 +116,8 @@ Then, we will also have a slider plot with which we can conveniently explore all
 
     Simulated charge state density profiles
 
-Use the slider to go over time, as you look at the distributions over radius of all the charge states. It would be really great if you could just save this type of time- and spatially-dependent visualization to a video-format, right? That couldn't be easier, using the :py:func:`~aurora.animate.animate_aurora` function::
+Use the slider to go over time, as you look at the distributions over radius of all the charge states.
 
-  aurora.animate_aurora(asim.rhop_grid, asim.time_out, nz.transpose(1,0,2),
-                        xlabel=r'$\rho_p$', ylabel='t={:.4f} [s]', zlabel=r'$n_z$ [A.U.]',
-                        labels=[str(i) for i in np.arange(0,nz.shape[1])],
-                        plot_sum=True, save_filename='aurora_anim')
-
-After running this, a .mp4 file with the name "aurora_anim.mp4" will be saved locally.
-    
 The main output object of the simulation is the dictionary `out`. This fields contained in `out` are:
 
 * `nz` (r, z, t): impurity density for all charge states in the plasma over time [1/cm^3].

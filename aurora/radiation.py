@@ -35,6 +35,7 @@ import pandas as pd
 from . import atomic
 from . import adas_files
 from . import plot_tools
+from .elements import get_element_Z_A
 
 
 def compute_rad(
@@ -337,8 +338,7 @@ def radiation_model(
     Te_eV : array (nr,)
         Electron temperature in eV
     geqdsk : dict, optional
-        EFIT gfile as returned after postprocessing by the :py:mod:`omfit_classes.omfit_eqdsk`
-        package (OMFITgeqdsk class).
+        Processed EFIT gfile, as a dictionary carrying the flux-surface geometry.
     adas_files_sub : dict
         Dictionary containing ADAS file names for forward modeling and/or radiation calculations.
         Possibly useful keys include
@@ -1254,14 +1254,8 @@ def get_local_spectrum(
     else:
         raise ValueError("Unrecognized adf15_file format!")
 
-    # import here to avoid issues when building docs or package
-    from omfit_classes.utils_math import atomic_element
-
     # get nuclear charge Z and atomic mass number A
-    out = atomic_element(symbol=trs.attrs["element"])
-    spec = list(out.keys())[0]
-    ion_A = int(out[spec]["A"])
-    ion_Z = int(out[spec]["Z"])
+    ion_Z, ion_A = get_element_Z_A(trs.attrs["element"])
 
     Z = trs.attrs["Z"]
 

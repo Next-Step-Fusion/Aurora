@@ -49,7 +49,7 @@ Installing via conda is also possible using
     conda install -c conda-forge aurorafusion 
     
     
-Both the PyPI and conda installation are automatically updated at every package release. Note that the conda installation does not currently install dependencies on `omfit_classes`, which users may need to install via `pip` (see the `PyPI repo <https://pypi.org/project/omfit-classes/>`_). 
+Both the PyPI and conda installation are automatically updated at every package release. 
 
 To look at the code and contribute to the Aurora repository, it is recommended to install from source, by git-cloning the  `Aurora repo <https://github.com/fsciortino/aurora>`_ from Github. This will ensure that you can access the latest version of the tools. 
 

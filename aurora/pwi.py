@@ -46,8 +46,8 @@ class aurora_sim_pwi(core.aurora_sim):
         Dictionary containing aurora inputs. See default_nml.py for some defaults,
         which users should modify for their runs.
     geqdsk : dict, optional
-        EFIT gfile as returned after postprocessing by the :py:mod:`omfit_classes.omfit_eqdsk`
-        package (OMFITgeqdsk class). If left to None (default), the minor and major radius must be
+        Processed EFIT gfile, as a dictionary carrying flux-surface geometry
+        ('fluxSurfaces', 'RMAXIS', 'BCENTR', ...). If left to None (default), the minor and major radius must be
         indicated in the namelist in order to create a radial grid.
     """
     

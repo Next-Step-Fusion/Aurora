@@ -40,6 +40,7 @@ from . import synth_diags
 from . import adas_files
 from . import surface
 from . import radiation
+from .elements import get_element_Z_A
  
 
 class aurora_sim:
@@ -51,8 +52,8 @@ class aurora_sim:
         Dictionary containing aurora inputs. See default_nml.py for some defaults,
         which users should modify for their runs.
     geqdsk : dict, optional
-        EFIT gfile as returned after postprocessing by the :py:mod:`omfit_classes.omfit_eqdsk`
-        package (OMFITgeqdsk class). If left to None (default), the minor and major radius must be
+        Processed EFIT gfile, as a dictionary carrying flux-surface geometry
+        ('fluxSurfaces', 'RMAXIS', 'BCENTR', ...). If left to None (default), the minor and major radius must be
         indicated in the namelist in order to create a radial grid.
 
     """
@@ -60,9 +61,8 @@ class aurora_sim:
     def __init__(self, namelist, geqdsk=None):
 
         if namelist is None:
-            # option useful for calls like omfit_classes.OMFITaurora(filename)
-            # A call like omfit_classes.OMFITaurora('test', namelist, geqdsk=geqdsk) is also possible
-            # to initialize the class as a dictionary.
+            # option useful for initializing the class as an empty dictionary,
+            # to be filled in by the caller.
             return
 
         # make sure that any changes in namelist will not propagate back to the calling function
@@ -71,14 +71,8 @@ class aurora_sim:
        
         self.imp = namelist["imp"]
 
-        # import here to avoid issues when building docs or package
-        from omfit_classes.utils_math import atomic_element
-
         # get nuclear charge Z and atomic mass number A
-        out = atomic_element(symbol=self.imp)
-        spec = list(out.keys())[0]
-        self.Z_imp = int(out[spec]["Z"])
-        self.A_imp = int(out[spec]["A"])
+        self.Z_imp, self.A_imp = get_element_Z_A(self.imp)
 
         self.reload_namelist()
  
@@ -651,15 +645,11 @@ class aurora_sim:
             Values are zero in the core region and non-zero in the SOL.
 
         """
-        # import here to avoid issues when building docs or package
-        from omfit_classes.utils_math import atomic_element
-
         # background mass number (=2 for D)
         self.main_element = self.namelist["main_element"]
-        out = atomic_element(symbol=self.namelist["main_element"])
-        spec = list(out.keys())[0]
-        self.main_ion_A = self.namelist["main_ion_A"] = int(out[spec]["A"])
-        self.main_ion_Z = self.namelist["main_ion_Z"] = int(out[spec]["Z"])
+        main_ion_Z, main_ion_A = get_element_Z_A(self.namelist["main_element"])
+        self.main_ion_A = self.namelist["main_ion_A"] = main_ion_A
+        self.main_ion_Z = self.namelist["main_ion_Z"] = main_ion_Z
 
         # factor for v = machnumber * sqrt((3T_i+T_e)k/m)
         vpf = self.namelist["SOL_mach"] * np.sqrt(q_electron / m_p / self.main_ion_A)

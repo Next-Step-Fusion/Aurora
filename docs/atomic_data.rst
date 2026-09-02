@@ -86,49 +86,7 @@ The following code illustrates how one may evaluate A&M components of the Balmer
 Working with neutrals
 ---------------------
 
-Aurora includes a number of useful functions for neutral modeling, both from the edge of fusion devices (thermal neutrals) and from neutral beams (fast and halo neutrals).
-
-For thermal neutrals, we make use of atomic data from the `Collrad` collisional-radiative model, part of the `DEGAS2`_ code.
-
-.. _DEGAS2: https://w3.pppl.gov/degas2/
-
-The :py:class:`~aurora.neutrals.erh5_file` class allows one to parse the `erh5.dat` file of DEGAS-2 that contains useful information to assess excited state fractions of neutrals in specific kinetic backgrounds. If the `erh5.dat` file is not available already, Aurora will download it and store it locally within its distribution directory. The data in this file is used for example in the :py:func:`~aurora.neutrals.get_exc_state_ratio` function, which given a ground state density of neutrals (`N1`), some ion and electron densities (`ni` and `ne`) and electron temperature (`Te`), will compute the fraction of neutrals in the principal quantum number `m`. Keyword arguments can be passed to this function to plot the results. Note that kinetic inputs may be given as a scalar or as a 1D list/array. The :py:func:`~aurora.neutrals.plot_exc_ratios` function may also be useful to plot the excited state ratios.
-
-Note that in order to find the photon emissivity coefficient of specific neutral lines, the :py:func:`~aurora.atomic.read_adf15` function may be used. For example, to obtain interpolation functions for neutral H Lyman-alpha emissivity, one can use::
-
-  filename = 'pec96#h_pju#h0.dat' # for D Ly-alpha
-  
-  # fetch file automatically, locally, from AURORA_ADAS_DIR, or directly from the web:
-  path = aurora.get_adas_file_loc(filename, filetype='adf15')  
-  
-  # load all the transitions in the chosen ADF15 file -- returns a pandas.DataFrame
-  trs = aurora.read_adf15(path)
-
-  # select and plot the Lyman-alpha line at 1215.2 A
-  tr = trs.loc[(trs['lambda [A]']==1215.2) & (trs['type']=='excit')]
-  aurora.plot_pec(tr)
-  
-
-This will plot the Lyman-alpha photon emissivity coefficients (both the components due to excitation and recombination) as a function of temperature in eV, as shown in the figures below.
-
-.. figure:: figs/aurora_h_lya_exc_pec.jpeg
-    :width: 500
-    :align: center
-    :alt: ADAS photon emissivity coefficients for the excitation contribution to the H :math:`Ly_\alpha` transition.
-    :figclass: align-center
-
-    ADAS photon emissivity coefficients for the excitation contribution to the H :math:`Ly_\alpha` transition.
-
-.. figure:: figs/aurora_h_lya_rec_pec.jpeg
-    :width: 500
-    :align: center
-    :alt: ADAS photon emissivity coefficients for the recombination contribution to the H :math:`Ly_\alpha` transition.
-    :figclass: align-center
-
-    ADAS photon emissivity coefficients for the recombination contribution to the H :math:`Ly_\alpha` transition.
-
-
-Some files (e.g. try `pec96#c_pju#c2.dat`) may also have charge exchange components. Note that both the inputs and outputs of the :py:func:`~aurora.atomic.read_adf15` function act on log-10 values, i.e. interpolants should be called on log-10 values of :math:`n_e` and :math:`T_e`, and the result of interpolation will only be in units of :math:`photons \cdot cm^3/s` after one takes the power of 10 of it.
+Aurora includes a number of useful functions for neutral modeling from neutral beams (fast and halo neutrals).
 
 Analysis routines to work with fast and halo neutrals are also provided in Aurora. Atomic rates for charge exchange of impurities with NBI neutrals are taken from Janev & Smith NF 1993 and can be obtained from :py:func:`~aurora.janev_smith_rates.js_sigma`, which wraps a number of functions for specific atomic processes. To compute charge exchange rates between NBI neutrals (fast or thermal) and any ions in the plasma, users need to provide a prediction of neutral densities, likely from an external code like `FIDASIM`_.
 
