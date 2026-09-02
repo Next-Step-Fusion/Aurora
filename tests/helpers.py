@@ -88,7 +88,7 @@ def load_state(h5_path="tests/data/centaur.h5", idt=-1):
     rho_tor = st["normalized_rho"][idt]
 
     # rho_pol = sqrt(normalized poloidal flux). Aurora's namelist "rhop" field
-    # is rho_POLOIDAL (docs/params.rst), so this -- not rho_tor -- is what the
+    # is rho_POLOIDAL (upstream docs: params.rst), so this -- not rho_tor -- is what the
     # kinetic profiles must be given on.
     psi_profile = st["psi_profile"][idt]
     psi_N = (psi_profile - psi_profile[0]) / (psi_profile[-1] - psi_profile[0])

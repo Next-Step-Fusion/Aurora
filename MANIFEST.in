@@ -1,8 +1,0 @@
-# Explicit listing of additional files to be included in packaging
-
-include USER_AGREEMENT.txt
-include README.rst
-recursive-include aurora *
-recursive-include docs *
-recursive-include examples *
-

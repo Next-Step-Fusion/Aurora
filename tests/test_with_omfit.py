@@ -67,7 +67,7 @@ H.write_geqdsk(state, "tests/data/centaur.geqdsk")
 geqdsk = omfit_eqdsk.OMFITgeqdsk("tests/data/centaur.geqdsk")
 
 # NOTE (coordinate): Aurora's namelist field "rhop" is sqrt of normalized
-# POLOIDAL flux (docs/params.rst). geqdsk["RHOVN"], used by the original
+# POLOIDAL flux (upstream docs: params.rst). geqdsk["RHOVN"], used by the original
 # script, is sqrt of normalized TOROIDAL flux -- OMFIT builds it from
 # Phi = int q dpsi. Feeding rho_tor in as rhop misplaces the profiles radially
 # (up to ~0.16 in rho for this equilibrium). Both branches therefore use

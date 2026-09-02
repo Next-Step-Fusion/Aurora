@@ -396,7 +396,7 @@ def parse_hydhel():
         Dictionary containing parse HYDHEL reactions.
     """
     # download and store tex file to disk
-    link = "http://www.eirene.de/hydhel.tex"
+    link = "https://www.eirene.de/old_eirene/hydhel.tex"
     r = requests.get(link)
     with open(local_path + os.sep + "hydhel.tex", "wb") as f:
         f.write(r.content)
@@ -501,7 +501,7 @@ def parse_amjuel():
     database = {}
 
     # first download the databases
-    link = "http://www.eirene.de/amjuel.tex"
+    link = "https://www.eirene.de/old_eirene/amjuel.tex"
     r = requests.get(link)
     with open(local_path + os.sep + "amjuel.tex", "wb") as f:
         f.write(r.content)
@@ -511,8 +511,11 @@ def parse_amjuel():
     # open file back
     aj = open(local_path + os.sep + "amjuel.tex").read()
     
-    if 'URL was not found' in  aj:
-        raise Exception('Sorry, amjuel.tex was removed from eirene websites. Find another source')
+    if "URL was not found" in aj:
+        raise RuntimeError(
+            "Could not download amjuel.tex from %s -- the server returned an error page. "
+            "EIRENE has moved these files before; check the current location." % link
+        )
 
     headers = aj.split(r"\section{H.")[1:]
  

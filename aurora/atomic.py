@@ -364,7 +364,7 @@ def get_atom_data(imp, files=["acd", "scd"]):
             raise KeyError(f"Atomics data not found for impurity {imp}!")
             
         elif filename not in atom_dict:
-            raise ValueError(f"Could not fetch {imp} {filecheck.upper()} file! Please specify file locations using 'files' argument, for example files=dict(acd='user/acd89_ar.dat')")
+            raise ValueError(f"Could not fetch {imp} {filename.upper()} file! Please specify file locations using 'files' argument, for example files=dict(acd='user/acd89_ar.dat')")
         else:
             all_files[filename] = atom_dict[filename]
 

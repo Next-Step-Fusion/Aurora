@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        python-version: ['3.11', '3.12', '3.13']
         build_command: [
           "pip install .",
           "pip install --editable .",
@@ -18,36 +19,39 @@ jobs:
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: ${{ matrix.python-version }}
     - name: Install Aurora
       run: ${{ matrix.build_command }}
     - name: Move to root and try importing Aurora
       run: |
         cd /
         python -c "import aurora; print(aurora.__version__)"
-    - name: Run test_basic.py
-      run: |
-        python examples/test_basic.py
 
-    - name: Run facit_basic.py
+    # Regression suite: baseline-locked, no equilibrium file needed.
+    # See tests/README.md. Runs only for the editable install, where the
+    # in-tree baselines and the built extension line up.
+    - name: Run the regression suite
+      if: matrix.build_command == 'pip install --editable .'
       run: |
-        python examples/facit_basic.py
-    - name: Run FSA_ioniz.py
+        pip install pytest
+        python -m pytest tests/ -v
+
+    # Examples. Every script here is OMFIT-free and needs no equilibrium file;
+    # the ones that required OMFIT, the Julia backend, the edge-code wrappers
+    # or W7-X web services were removed in this fork.
+    - name: Run am_balmer_emission.py
       run: |
-        python examples/FSA_ioniz.py
+        python examples/am_balmer_emission.py
+    - name: Run cooling_factors.py
+      run: |
+        python examples/cooling_factors.py
     - name: Run metastables.py
       run: |
         python examples/metastables.py
-    - name: Run steady_state_run.py
-      run: |
-        python examples/steady_state_run.py
-    - name: Run superstages.py
-      run: |
-        python examples/superstages.py
     - name: Run surface_data_bulk_sputtering.py
       run: |
         python examples/surface_data_bulk_sputtering.py
@@ -57,34 +61,12 @@ jobs:
     - name: Run surface_data_reflection.py
       run: |
         python examples/surface_data_reflection.py
-    - name: Run test_extended_recycling_model.py
-      run: |
-        python examples/test_extended_recycling_model.py
     - name: Run test_frac_abundances.py
       run: |
         python examples/test_frac_abundances.py
-    - name: Run test_full_PWI_model.py
-      run: |
-        python examples/test_full_PWI_model.py
     - name: Run test_local_spectrum.py
       run: |
         python examples/test_local_spectrum.py
     - name: Run test_local_spectrum_W.py
       run: |
         python examples/test_local_spectrum_W.py
-    - name: Run test_radiation_model.py
-      run: |
-        python examples/test_radiation_model.py
-    - name: Run aurora_rates_demo.py
-      run: |
-        python examples/aurora_rates_demo.py
-    - name: Run compare_algorithms.py
-      run: |
-        python examples/compare_algorithms.py
-    - name: Run cooling_factors.py
-      run: |
-        python examples/cooling_factors.py
- 
- 
-
-       
