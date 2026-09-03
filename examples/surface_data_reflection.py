@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import sys
 import os
 
+plt.ioff()  # Turn off interactive mode
 # Make sure that package home is added to sys.path
 sys.path.append("../")
 import aurora
@@ -86,3 +87,5 @@ for ii in [0,1]:
 for ii in [2]:
     ax[0, ii].set_ylim([0,1000])
     ax[1, ii].set_ylim([0,1000])
+
+plt.show(block=True)  # Keep the plot open until manually closed

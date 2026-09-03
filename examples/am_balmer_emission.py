@@ -2,7 +2,7 @@ import os, copy
 import numpy as np
 import matplotlib.pylab as plt
 
-plt.ion()
+plt.ioff()  # Turn off interactive mode
 import sys
 
 # Make sure that package home is added to sys.path
@@ -125,3 +125,5 @@ ax[1].set_yscale("log")
 ax[1].set_ylim((1e-3, 1e0))
 ax[1].set_xlabel("$T_e$ [eV]")
 ax[1].set_ylabel("$\epsilon_i/\epsilon_{tot}$")
+
+plt.show(block=True)  # Keep the plot open until manually closed
