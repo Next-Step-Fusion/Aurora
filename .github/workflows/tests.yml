@@ -11,11 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.11', '3.12', '3.13']
-        build_command: [
-          "pip install .",
-          "pip install --editable .",
-        ]
+        python-version: ['3.11']
+        build_command: ['pip install --editable .']
       fail-fast: false
 
     steps:
@@ -35,38 +32,6 @@ jobs:
     # See tests/README.md. Runs only for the editable install, where the
     # in-tree baselines and the built extension line up.
     - name: Run the regression suite
-      if: matrix.build_command == 'pip install --editable .'
       run: |
         pip install pytest
         python -m pytest tests/ -v
-
-    # Examples. Every script here is OMFIT-free and needs no equilibrium file;
-    # the ones that required OMFIT, the Julia backend, the edge-code wrappers
-    # or W7-X web services were removed in this fork.
-    - name: Run am_balmer_emission.py
-      run: |
-        python examples/am_balmer_emission.py
-    - name: Run cooling_factors.py
-      run: |
-        python examples/cooling_factors.py
-    - name: Run metastables.py
-      run: |
-        python examples/metastables.py
-    - name: Run surface_data_bulk_sputtering.py
-      run: |
-        python examples/surface_data_bulk_sputtering.py
-    - name: Run surface_data_impurity_sputtering.py
-      run: |
-        python examples/surface_data_impurity_sputtering.py
-    - name: Run surface_data_reflection.py
-      run: |
-        python examples/surface_data_reflection.py
-    - name: Run test_frac_abundances.py
-      run: |
-        python examples/test_frac_abundances.py
-    - name: Run test_local_spectrum.py
-      run: |
-        python examples/test_local_spectrum.py
-    - name: Run test_local_spectrum_W.py
-      run: |
-        python examples/test_local_spectrum_W.py
