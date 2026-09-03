@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import sys
 import os
 
+plt.ioff()  # Turn off interactive mode
 # Make sure that package home is added to sys.path
 sys.path.append("../")
 import aurora
@@ -71,3 +72,5 @@ for ii in [0,1]:
     ax[1, ii].set_xlim([0,5000])
     ax[1, ii].set_ylim([0,150])
     ax[1, ii].legend(loc="best").set_draggable(True)
+
+plt.show(block=True)  # Keep the plot open until manually closed

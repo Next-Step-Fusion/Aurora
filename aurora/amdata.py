@@ -316,8 +316,8 @@ class h_am_pecs:
             ax[1].set_yscale("log")
             ax[1].set_ylim((1e-3, 1e0))
             ax[1].set_xlabel("$T_e$ [eV]")
-            ax[0].set_ylabel("$\epsilon_{tot}$ [ph/m$^{-3}$]")
-            ax[1].set_ylabel("$\epsilon_i/\epsilon_{tot}$")
+            ax[0].set_ylabel(r"$\epsilon_{tot}$ [ph/m$^{-3}$]")
+            ax[1].set_ylabel(r"$\epsilon_i/\epsilon_{tot}$")
 
         return c1, c2, c3, c4, c5
 
@@ -396,7 +396,7 @@ def parse_hydhel():
         Dictionary containing parse HYDHEL reactions.
     """
     # download and store tex file to disk
-    link = "http://www.eirene.de/hydhel.tex"
+    link = "https://www.eirene.de/old_eirene/hydhel.tex"
     r = requests.get(link)
     with open(local_path + os.sep + "hydhel.tex", "wb") as f:
         f.write(r.content)
@@ -408,11 +408,11 @@ def parse_hydhel():
     report = "HYDHEL"
 
     headers = {}
-    for h in hh.split("\section{H.")[1:]:
+    for h in hh.split(r"\section{H.")[1:]:
         headers[int(h[0:2])] = h
 
     for ih in [1, 2, 8]:
-        for S in headers[ih].split("\subsection{"):
+        for S in headers[ih].split(r"\subsection{"):
             # ll=S.split('\r\n')
             ll = S.split("\n")
             if ll[1].startswith("Reaction"):
@@ -446,7 +446,7 @@ def parse_hydhel():
                 ] = reaction  # the symbol . is used by json/fson to address a child element
 
     for ih in [3]:
-        for S in headers[ih].split("\subsection{"):
+        for S in headers[ih].split(r"\subsection{"):
             # ll=S.split('\r\n')
             ll = S.split("\n")
             if ll[1].startswith("Reaction"):
@@ -501,7 +501,7 @@ def parse_amjuel():
     database = {}
 
     # first download the databases
-    link = "http://www.eirene.de/amjuel.tex"
+    link = "https://www.eirene.de/old_eirene/amjuel.tex"
     r = requests.get(link)
     with open(local_path + os.sep + "amjuel.tex", "wb") as f:
         f.write(r.content)
@@ -511,15 +511,18 @@ def parse_amjuel():
     # open file back
     aj = open(local_path + os.sep + "amjuel.tex").read()
     
-    if 'URL was not found' in  aj:
-        raise Exception('Sorry, amjuel.tex was removed from eirene websites. Find another source')
+    if "URL was not found" in aj:
+        raise RuntimeError(
+            "Could not download amjuel.tex from %s -- the server returned an error page. "
+            "EIRENE has moved these files before; check the current location." % link
+        )
 
-    headers = aj.split("\section{H.")[1:]
+    headers = aj.split(r"\section{H.")[1:]
  
     for ih in [3, 4, 10, 12]:
         header = headers[ih]
 
-        for r in header.split("\subsection{")[1:]:
+        for r in header.split(r"\subsection{")[1:]:
             l3 = (" ".join(r.split("\n")[0:3])).strip()
             nam = l3.split()[1]
 
@@ -554,7 +557,7 @@ def parse_amjuel():
             database["%s,%i,%s" % (report, ih, nam.replace(".", "_"))] = reaction
 
     for ih in [2, 8, 11]:
-        for S in headers[ih].split("\subsection{")[1:]:
+        for S in headers[ih].split(r"\subsection{")[1:]:
             ll = S.split("\n")
             if ll[1].startswith("Reaction"):
                 nam = ll[1].split()[1]

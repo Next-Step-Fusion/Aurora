@@ -411,7 +411,7 @@ def get_HFS_LFS(geqdsk, rho_pol=None):
     Parameters
     ----------
     geqdsk : dict
-        Dictionary containing the g-EQDSK file as processed by the `omfit_classes.omfit_eqdsk`.
+        Dictionary containing the processed g-EQDSK equilibrium.
     rho_pol : array, optional
         Array corresponding to a grid in sqrt of normalized poloidal flux for which a
         corresponding rvol grid should be found. If left to None, an arbitrary grid will be
@@ -473,7 +473,7 @@ def get_rhopol_rvol_mapping(geqdsk, rho_pol=None):
     Parameters
     ----------
     geqdsk : dict
-        Dictionary containing the g-EQDSK file as processed by `omfit_classes.omfit_eqdsk`. 
+        Dictionary containing the processed g-EQDSK equilibrium. 
     rho_pol : array, optional
         Array corresponding to a grid in sqrt of normalized poloidal flux for which a 
         corresponding rvol grid should be found. If left to None, an arbitrary grid will be 
@@ -674,7 +674,7 @@ def estimate_clen(geqdsk):
     Parameters
     ----------
     geqdsk : dict
-        EFIT g-EQDSK as processed by `omfit_classes.omfit_eqdsk`.
+        Processed EFIT g-EQDSK equilibrium dictionary.
 
     Returns
     -------
@@ -700,59 +700,6 @@ def estimate_clen(geqdsk):
     clen_limiter = round(h / 5.0, 5)  # 1/5th of machine height
 
     return clen_divertor, clen_limiter
-
-
-def estimate_boundary_distance(shot, device, time_ms):
-    """Obtain a simple estimate for the distance between the LCFS and the wall boundary.
-    This requires access to the A_EQDSK on the EFIT01 tree on MDS+. Users who may find that this call
-    does not work for their device may try to adapt the OMFITmdsValue TDI string.
-
-    Parameters
-    ----------
-    shot : int
-        Discharge/experiment number
-    device : str
-        Name of device, e.g. 'C-Mod', 'DIII-D', etc.
-    time_ms : int or float
-        Time at which results for the outer gap should be taken.
-
-    Returns
-    -------
-    bound_sep : float
-        Estimate for the distance between the wall boundary and the separatrix [cm]
-    lim_sep : float
-        Estimate for the distance between the limiter and the separatrix [cm]. This is (quite arbitrarily)
-        taken to be 2/3 of the bound_sep distance.
-    """
-    # import this here, so that it is not required for the whole package
-    from omfit_classes.omfit_mds import OMFITmdsValue
-
-    try:
-        tmp = OMFITmdsValue(
-            server=device,
-            treename="EFIT01",
-            shot=shot,
-            TDI="\\EFIT01::TOP.RESULTS.A_EQDSK.ORIGHT",
-        )  # CMOD format, take ORIGHT
-        assert tmp.check()
-    except Exception:
-        tmp = OMFITmdsValue(
-            server=device,
-            treename="EFIT01",
-            shot=shot,
-            TDI="\\EFIT01::TOP.RESULTS.AEQDSK.GAPOUT",
-        )  # useful variable for many other devices
-  
-    time_vec = tmp.dim_of(0)
-    data_r = tmp.data()
-
-    ind = np.argmin(np.abs(time_vec - time_ms))
-    inds = slice(ind - 3, ind + 3)
-    bound_sep = round(np.mean(data_r[inds]), 3)
-
-    # take separation to limiter to be 2/3 of the separation to the wall boundary
-    lim_sep = round(bound_sep * 2.0 / 3.0, 3)
-    return bound_sep*100, lim_sep*100
 
 
 def vol_int(var, rvol_grid, pro_grid, Raxis_cm, rvol_max=None):
@@ -794,3 +741,101 @@ def vol_int(var, rvol_grid, pro_grid, Raxis_cm, rvol_max=None):
     var_volint = np.nansum(var * zvol, axis=-1)
 
     return var_volint
+
+
+def grid_from_rvol(rvol_grid, dr_0=None):
+    """Derive Aurora's grid derivative arrays for an ARBITRARY monotonic rvol grid.
+
+    Aurora's Fortran kernel does not require the analytic STRAHL grid produced by
+    :py:func:`create_radial_grid`: it takes ``(rr, pro, qpr, prox)`` as plain
+    arrays. The internal coordinate :math:`\\rho` is the grid *index*, so
+    :math:`d\\rho = 1` by construction and
+
+    .. math::
+
+        pro = \\rho' / 2 \\\\
+        qpr = pro / r + \\rho'' / 2
+
+    .. note::
+        The docstring of :py:func:`create_radial_grid` states
+        ``qpr = (d^2 rho/dr^2)/(2 d_rho)``, but the code -- and the Fortran that
+        consumes it -- uses the cylindrical-Laplacian form ``pro/r + rho''/2``
+        given above. Verified against the analytic grid to 1.6e-4 relative.
+
+    Parameters
+    ----------
+    rvol_grid : 1D array
+        Strictly increasing volume-normalized radii [cm], starting at 0.0.
+    dr_0 : float, optional
+        Spacing used for the on-axis special case ``pro[0] = 2/dr_0**2``.
+        Defaults to the first grid spacing.
+
+    Returns
+    -------
+    rvol_grid, pro_grid, qpr_grid, prox_param
+        Same order and meaning as :py:func:`create_radial_grid`.
+    """
+    rvol_grid = np.asarray(rvol_grid, dtype=float)
+    if rvol_grid[0] != 0.0:
+        raise ValueError("rvol_grid must start at 0.0 (magnetic axis)")
+    if np.any(np.diff(rvol_grid) <= 0):
+        raise ValueError("rvol_grid must be strictly increasing")
+    if dr_0 is None:
+        dr_0 = rvol_grid[1] - rvol_grid[0]
+
+    rho = np.arange(len(rvol_grid), dtype=float)      # rho == index, d_rho = 1
+    d1 = np.gradient(rho, rvol_grid, edge_order=2)    # rho'
+    d2 = np.gradient(d1, rvol_grid, edge_order=2)     # rho''
+
+    pro_grid = 0.5 * d1
+    qpr_grid = np.zeros_like(rvol_grid)
+    qpr_grid[1:] = pro_grid[1:] / rvol_grid[1:] + 0.5 * d2[1:]
+
+    pro_grid[0] = 2.0 / dr_0**2                       # on-axis special case
+    qpr_grid[0] = 0.0
+    prox_param = 2.0 * pro_grid[-1]
+    return rvol_grid, pro_grid, qpr_grid, prox_param
+
+
+def create_radial_grid_from_volume(V, Raxis_cm, bound_sep=2.0, dr_sol=None,
+                                   n_sol=None):
+    """Build an Aurora radial grid from externally-supplied flux-surface volumes.
+
+    Intended for coupling Aurora to a free-boundary equilibrium / transport
+    solver, which naturally produces V on its own radial grid.
+
+    Parameters
+    ----------
+    V : 1D array
+        Volume enclosed by each flux surface [:math:`m^3`], 0.0 on axis through
+        to the LCFS.
+    Raxis_cm : float
+        Major radius of the magnetic axis [cm]. Must be the same R used for
+        ``Raxis_cm`` in the namelist, otherwise :py:func:`vol_int` will not
+        reproduce ``V``.
+    bound_sep : float
+        Distance from LCFS to the wall boundary [cm]; Aurora needs grid points
+        out to ``rvol_lcfs + bound_sep``.
+    dr_sol : float, optional
+        SOL grid spacing [cm]. Defaults to the last core spacing.
+    n_sol : int, optional
+        Number of SOL points. Overrides ``dr_sol`` if given.
+
+    Returns
+    -------
+    rvol_grid, pro_grid, qpr_grid, prox_param, rvol_lcfs
+    """
+    V = np.asarray(V, dtype=float)
+    rvol_core = np.sqrt(V / (2 * np.pi**2 * (Raxis_cm / 100.0))) * 100.0
+    rvol_core[0] = 0.0
+    rvol_lcfs = rvol_core[-1]
+
+    if n_sol is None:
+        if dr_sol is None:
+            dr_sol = rvol_core[-1] - rvol_core[-2]
+        n_sol = max(int(np.ceil(bound_sep / dr_sol)), 1)
+    rvol_sol = rvol_lcfs + np.linspace(0.0, bound_sep, n_sol + 1)[1:]
+
+    rvol_grid = np.concatenate([rvol_core, rvol_sol])
+    out = grid_from_rvol(rvol_grid, dr_0=rvol_core[1] - rvol_core[0])
+    return out + (rvol_lcfs,)

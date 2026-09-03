@@ -7,7 +7,7 @@ It is recommended to run this in IPython.
 import numpy as np
 import matplotlib.pyplot as plt
 
-plt.ion()
+plt.ioff()  # Turn off interactive mode
 import sys
 import os
 import time
@@ -19,7 +19,8 @@ sys.path.append("../")
 import aurora
 
 # pass any argument via the command line to show plots
-plot = len(sys.argv) > 1
+# plot = len(sys.argv) > 1
+plot = True
 
 ion = "Al"
 
@@ -78,3 +79,5 @@ if plot:
 # _Te, fz, rate_coeffs = aurora.get_atomic_relax_time(
 #     atom_data, np.ones(100) * 1e14, np.logspace(1, 4, 100), ne_tau=np.inf, plot=plot
 # )
+
+    plt.show(block=True)  # Keep the plot open until manually closed

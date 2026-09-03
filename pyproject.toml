@@ -10,47 +10,51 @@ urls = { "Homepage" = "https://github.com/fsciortino/Aurora" }
 keywords = ["particle and impurity transport, neutrals, radiation, magnetic confinement fusion"]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
+requires-python = ">=3.11"
 dependencies = [
-    "matplotlib",
-    "numpy<2.0.0",
-    "omfit_classes",
-    "pandas",
-    "pexpect",
+    # numpy 2 is required: the code uses np.trapezoid, which numpy 1 does not have
+    "numpy>=2.0.0",
+    # scipy 1.13 is the first release supporting numpy 2
+    "scipy>=1.13",
+    # matplotlib 3.9 is the first release supporting numpy 2
+    "matplotlib>=3.9",
+    # pandas 2.2.2 is the first release supporting numpy 2
+    "pandas>=2.2.2",
     "requests",
-    "scipy",
-    # transitive dependencies of omfit_classes
-    # that omfit_classes does not advertise
-    "fortranformat",
-    "netCDF4",
-    "uncertainties",
-    "omas",
-    # omfit_classes will have issues with newer versions
-    # of xarray for two different reasons:
-    # 1. because of a recently-introduced xarray bug that
-    #    will be fixed in the next release after v2024.02.0
-    #    (this commit: https://github.com/pydata/xarray/commit/a241845c0dfcb8a5a0396f5ef7602e9dae6155c0).
-    #    This constrains xarray<=v2023.07.0.
-    # 2. because omfit_classes uses xarray.plot.plot, which has
-    #    been removed/renamed by a commit from October 2022.
-    #    This constrains xarray<=v2022.09.0
-    "xarray==v2022.09.0",
-    "tqdm",  # only because it is missing in OMFIT dependencies!
-    # omfit_classes has issues with newer versions of
-    # matplotlib, see https://github.com/gafusion/OMFIT-source/issues/6784
-    # (link appears to be broken - MT 2024-09-26; trying to relax <=3.5)
-    "matplotlib",
+    "pytest>=9.1.1",
+    "freeqdsk>=0.5.2",
+    "h5py>=3.16.0",
+    "imageio>=2.37.4",
 ]
 
 [build-system]
 # scikit-build-core is used to integrate with CMake
-requires = ["scikit-build-core", "numpy", "setuptools"]
+requires = ["scikit-build-core>=0.8", "numpy>=2.0.0"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
-ninja.minimum-version = "1.10"
-cmake.minimum-version = "3.17.2"
+ninja.version = ">=1.10"
+cmake.version = ">=3.17.2"
 wheel.packages = ["aurora"]
+
+# The sdist otherwise carries every git-tracked file, which means ~50 MB of test
+# fixtures and stored baselines. Note scikit-build-core does NOT read MANIFEST.in.
+sdist.exclude = [
+    ".cache",
+    ".github",
+    ".pytest_cache",
+    "CLAUDE.md",
+    "TASK*.md",
+    "outputs",
+    "tests/data",          # centaur.h5 is 32 MB
+    "tests/baselines",     # regression baselines, ~12 MB
+    "tests/old_baseline",
+    "uv.lock",
+]
 
 [tool.scikit-build.metadata.version]
 provider = "scikit_build_core.metadata.regex"

@@ -4,7 +4,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-plt.ion()
+plt.ioff()  # Turn off interactive mode
+
 import aurora
 
 
@@ -77,4 +78,4 @@ plt.ylabel("$T_e$ [keV]")
 cb.set_label("log$_{10}$(Emissivity)")
 plt.title("W spectrum")
  
- 
+plt.show(block=True)  # Keep the plot open until manually closed 
