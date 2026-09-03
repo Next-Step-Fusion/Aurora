@@ -10,8 +10,6 @@ python -m pytest tests/ -v
 ```
 
 Requires an Aurora install on **Python ≥ 3.11 / numpy ≥ 2** (see `TASK4_VERSION_UPGRADE.md`).
-The repo's in-tree `.venv` is Python 3.8 / numpy 1.24 and is below that floor — it cannot run the
-suite. It is still the only environment that can run `test_with_omfit.py`, which needs OMFIT.
 
 ---
 
@@ -162,12 +160,6 @@ from collection; otherwise `pytest tests/` would silently run them. Execute them
 | Script | Command | Extra requirements |
 |---|---|---|
 | `test_core_impurity.py` | `python tests/test_core_impurity.py` | `h5py`, `imageio`, `freeqdsk`; reads `data/centaur.h5` and `data/centaur.geqdsk` |
-| `test_with_omfit.py` | `python tests/test_with_omfit.py` | **OMFIT** (`omfit_classes`), `imageio`; reads `data/centaur.geqdsk` |
-
-`test_with_omfit.py` is developer-only and the one place in the repo that still imports OMFIT on
-purpose. It runs the same physics case twice — once through the OMFIT geqdsk path and once through
-the OMFIT-free namelist path — and compares them. It is the reference the regression suite above
-was derived from, kept so the equivalence check can still be reproduced in a legacy environment.
 
 Note `test_core_impurity.py` reads its g-file with **`freeqdsk`**, not OMFIT — a useful precedent
 for the OMFIT-free equilibrium interface that `TASK3_OMFIT_REMOVAL.md` §6 leaves open.
