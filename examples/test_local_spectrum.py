@@ -3,7 +3,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-plt.ion()
+
+plt.ioff()  # Turn off interactive mode
+
 import aurora
 
 # load neutral H ADF15 file
@@ -33,3 +35,4 @@ trs = trs.loc[trs['lambda [A]']<2000]
 out = aurora.get_local_spectrum(trs,  ne_cm3, Te_eV,
                                 ion_exc_rec_dens=[0.0, fz[0,0], fz[0,1]])
 
+plt.show(block=True)  # Keep the plot open until manually closed

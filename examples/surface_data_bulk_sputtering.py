@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import sys
 import os
 
+plt.ioff()  # Turn off interactive mode
 # Make sure that package home is added to sys.path
 sys.path.append("../")
 import aurora
@@ -68,3 +69,5 @@ for ii in [0,1]:
     ax[1, ii].set_xlabel(f"$E_{{0,{projectile_2}}}$ [eV]")
     ax[1, ii].set_xlim([10,10000])
     ax[1, ii].set_ylim([0.00001,10])
+
+plt.show(block=True)  # Keep the plot open until manually closed

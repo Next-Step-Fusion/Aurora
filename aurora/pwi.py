@@ -46,8 +46,8 @@ class aurora_sim_pwi(core.aurora_sim):
         Dictionary containing aurora inputs. See default_nml.py for some defaults,
         which users should modify for their runs.
     geqdsk : dict, optional
-        EFIT gfile as returned after postprocessing by the :py:mod:`omfit_classes.omfit_eqdsk`
-        package (OMFITgeqdsk class). If left to None (default), the minor and major radius must be
+        Processed EFIT gfile, as a dictionary carrying flux-surface geometry
+        ('fluxSurfaces', 'RMAXIS', 'BCENTR', ...). If left to None (default), the minor and major radius must be
         indicated in the namelist in order to create a radial grid.
     """
     
@@ -490,13 +490,13 @@ class aurora_sim_pwi(core.aurora_sim):
             ax1[0, 1].plot(self.time_out, PWI_traces["impurity_flux_mainwall"], color = light_blues[0])
             if ylim:
                 ax1[0, 1].set_ylim(0,np.max(PWI_traces["impurity_flux_mainwall"])*1.15)
-            ax1[0, 1].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[0, 1].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[0, 1].set_title(f"{self.imp} flux towards wall", loc='right', fontsize = 11)
 
             ax1[0, 2].plot(self.time_out, PWI_traces["impurity_impact_energy_mainwall"], color = reds[0])
             if ylim:
                 ax1[0, 2].set_ylim(0,np.max(PWI_traces["impurity_impact_energy_mainwall"])*1.15)
-            ax1[0, 2].set_ylabel('[$\mathrm{eV}$]') 
+            ax1[0, 2].set_ylabel(r'[$\mathrm{eV}$]') 
             ax1[0, 2].set_title(f"Mean {self.imp} impact energy", loc='right', fontsize = 11)
 
             ax1[0, 3].plot(self.time_out, PWI_traces["impurity_reflection_coeff_mainwall"], color = blues[0])
@@ -508,14 +508,14 @@ class aurora_sim_pwi(core.aurora_sim):
             ax1[0, 4].plot(self.time_out, PWI_traces["impurity_reflection_energy_mainwall"], color = reds[0])
             if ylim:
                 ax1[0, 4].set_ylim(0,np.max(PWI_traces["impurity_reflection_energy_mainwall"])*1.15)
-            ax1[0, 4].set_ylabel('[$\mathrm{eV}$]') 
+            ax1[0, 4].set_ylabel(r'[$\mathrm{eV}$]') 
             ax1[0, 4].set_title(f"Mean energy of reflected {self.imp}", loc='right', fontsize = 11)
 
             for i in range(0,len(background_species)):
                 ax1[1, 1].plot(self.time_out, PWI_traces["background_fluxes_mainwall"][:,i], label=f"{background_species[i]} flux", color = light_blues[i+1])
             if ylim:
                 ax1[1, 1].set_ylim(0,np.max(PWI_traces["background_fluxes_mainwall"])*1.15)
-            ax1[1, 1].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[1, 1].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[1, 1].set_title("Background fluxes towards wall", loc='right', fontsize = 11)
             ax1[1, 1].legend(loc="best", fontsize = 9).set_draggable(True)
 
@@ -523,7 +523,7 @@ class aurora_sim_pwi(core.aurora_sim):
                 ax1[1, 2].plot(self.time_out, PWI_traces["background_impact_energies_mainwall"][:,i], label=f"{background_species[i]}", color = reds[i+1])
             if ylim:
                 ax1[1, 2].set_ylim(0,np.max(PWI_traces["background_impact_energies_mainwall"])*1.15)
-            ax1[1, 2].set_ylabel('[$\mathrm{eV}$]')
+            ax1[1, 2].set_ylabel(r'[$\mathrm{eV}$]')
             ax1[1, 2].set_title("Mean background fluxes impact energy", loc='right', fontsize = 11)
             ax1[1, 2].legend(loc="best", fontsize = 9).set_draggable(True)
 
@@ -541,33 +541,33 @@ class aurora_sim_pwi(core.aurora_sim):
                 ax1[1, 4].plot(self.time_out, PWI_traces["impurity_sputtering_energies_mainwall"][:,i+1], label=f"from {background_species[i]}", color = reds[i+1])
             if ylim:
                 ax1[1, 4].set_ylim(0,np.max(PWI_traces["impurity_sputtering_energies_mainwall"])*1.15)
-            ax1[1, 4].set_ylabel('[$\mathrm{eV}$]')
+            ax1[1, 4].set_ylabel(r'[$\mathrm{eV}$]')
             ax1[1, 4].set_title(f"Mean energy of sputtered {self.imp}", loc='right', fontsize = 11)
             ax1[1, 4].legend(loc="best", fontsize = 9).set_draggable(True)   
             
             ax1[2, 0].plot(self.time_out, PWI_traces["impurity_implantation_rate_mainwall"], label="Total absorption rate", color = greens[0])
             ax1[2, 0].plot(self.time_out, PWI_traces["impurity_sputtering_rate_total_mainwall"], label="Total release rate", color = blues[0])
             ax1[2, 0].plot(self.time_out, PWI_traces["impurity_implantation_rate_mainwall"]-PWI_traces["impurity_sputtering_rate_total_mainwall"], label="Balance", color = 'black')
-            ax1[2, 0].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[2, 0].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[2, 0].set_title(f"{self.imp} wall balance", loc='right', fontsize = 11)
             ax1[2, 0].legend(loc="best", fontsize = 9).set_draggable(True)
             
             ax1[2, 1].plot(self.time_out, PWI_traces["impurity_reflection_rate_mainwall"], color = blues[0])
             if ylim:
                 ax1[2, 1].set_ylim(0,np.max(PWI_traces["impurity_reflection_rate_mainwall"])*1.15)
-            ax1[2, 1].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[2, 1].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[2, 1].set_title(f"{self.imp} reflection rate from wall", loc='right', fontsize = 11)
 
             ax1[2, 2].plot(self.time_out, PWI_traces["impurity_prompt_recycling_rate_mainwall"], color = blues[0])
             if ylim:
                 ax1[2, 2].set_ylim(0,np.max(PWI_traces["impurity_prompt_recycling_rate_mainwall"])*1.15)
-            ax1[2, 2].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[2, 2].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[2, 2].set_title(f"{self.imp} prompt recycling rate from wall", loc='right', fontsize = 11)
             
             ax1[2, 3].plot(self.time_out, PWI_traces["impurity_implantation_rate_mainwall"], color = blues[0])
             if ylim:
                 ax1[2, 3].set_ylim(0,np.max(PWI_traces["impurity_implantation_rate_mainwall"])*1.15)
-            ax1[2, 3].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[2, 3].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[2, 3].set_title(f"{self.imp} implantation rate into wall", loc='right', fontsize = 11)
             
             ax1[2, 4].plot(self.time_out, PWI_traces["impurity_sputtering_rates_mainwall"][:,0], label=f"from {self.imp}", color = blues[0])
@@ -575,12 +575,12 @@ class aurora_sim_pwi(core.aurora_sim):
                 ax1[2, 4].plot(self.time_out, PWI_traces["impurity_sputtering_rates_mainwall"][:,i+1], label=f"from {background_species[i]}", color = blues[i+1])
             if ylim:
                 ax1[2, 4].set_ylim(0,np.max(PWI_traces["impurity_sputtering_rates_mainwall"])*1.15)
-            ax1[2, 4].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax1[2, 4].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax1[2, 4].set_title(f"{self.imp} sputtering rates from wall", loc='right', fontsize = 11)
             ax1[2, 4].legend(loc="best", fontsize = 9).set_draggable(True)
 
             for ii in [0, 1, 2, 3, 4]:
-                ax1[2, ii].set_xlabel('$\mathrm{time}$ [$\mathrm{s}$]')
+                ax1[2, ii].set_xlabel(r'$\mathrm{time}$ [$\mathrm{s}$]')
             ax1[2, 0].set_xlim(self.time_out[[0, -1]])
             
             plt.tight_layout()
@@ -603,13 +603,13 @@ class aurora_sim_pwi(core.aurora_sim):
             ax2[0, 1].plot(self.time_out, PWI_traces["impurity_flux_divwall"], color = light_blues[0])
             if ylim:
                 ax2[0, 1].set_ylim(0,np.max(PWI_traces["impurity_flux_divwall"])*1.15)
-            ax2[0, 1].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax2[0, 1].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax2[0, 1].set_title(f"{self.imp} flux towards wall", loc='right', fontsize = 11)
 
             ax2[0, 2].plot(self.time_out, PWI_traces["impurity_impact_energy_divwall"], color = reds[0])
             if ylim:
                 ax2[0, 2].set_ylim(0,np.max(PWI_traces["impurity_impact_energy_divwall"])*1.15)
-            ax2[0, 2].set_ylabel('[$\mathrm{eV}$]')
+            ax2[0, 2].set_ylabel(r'[$\mathrm{eV}$]')
             ax2[0, 2].set_title(f"Mean {self.imp} impact energy", loc='right', fontsize = 11)
 
             ax2[0, 3].plot(self.time_out, PWI_traces["impurity_reflection_coeff_divwall"], color = blues[0])
@@ -621,14 +621,14 @@ class aurora_sim_pwi(core.aurora_sim):
             ax2[0, 4].plot(self.time_out, PWI_traces["impurity_reflection_energy_divwall"], color = reds[0])
             if ylim:
                 ax2[0, 4].set_ylim(0,np.max(PWI_traces["impurity_reflection_energy_divwall"])*1.15)
-            ax2[0, 4].set_ylabel('[$\mathrm{eV}$]') 
+            ax2[0, 4].set_ylabel(r'[$\mathrm{eV}$]') 
             ax2[0, 4].set_title(f"Mean energy of reflected {self.imp}", loc='right', fontsize = 11)
 
             for i in range(0,len(background_species)):
                 ax2[1, 1].plot(self.time_out, PWI_traces["background_fluxes_divwall"][:,i], label=f"{background_species[i]} flux", color = light_blues[i+1])
             if ylim:
                 ax2[1, 1].set_ylim(0,np.max(PWI_traces["background_fluxes_divwall"])*1.15)
-            ax2[1, 1].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax2[1, 1].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax2[1, 1].set_title("Background fluxes towards wall", loc='right', fontsize = 11)
             ax2[1, 1].legend(loc="best", fontsize = 9).set_draggable(True)
 
@@ -636,7 +636,7 @@ class aurora_sim_pwi(core.aurora_sim):
                 ax2[1, 2].plot(self.time_out, PWI_traces["background_impact_energies_divwall"][:,i], label=f"{background_species[i]}", color = reds[i+1])
             if ylim:
                 ax2[1, 2].set_ylim(0,np.max(PWI_traces["background_impact_energies_divwall"])*1.15)
-            ax2[1, 2].set_ylabel('[$\mathrm{eV}$]')
+            ax2[1, 2].set_ylabel(r'[$\mathrm{eV}$]')
             ax2[1, 2].set_title("Mean background fluxes impact energy", loc='right', fontsize = 11)
             ax2[1, 2].legend(loc="best", fontsize = 9).set_draggable(True)
 
@@ -654,33 +654,33 @@ class aurora_sim_pwi(core.aurora_sim):
                 ax2[1, 4].plot(self.time_out, PWI_traces["impurity_sputtering_energies_divwall"][:,i+1], label=f"from {background_species[i]}", color = reds[i+1])
             if ylim:
                 ax2[1, 4].set_ylim(0,np.max(PWI_traces["impurity_sputtering_energies_divwall"])*1.15)
-            ax2[1, 4].set_ylabel('[$\mathrm{eV}$]')
+            ax2[1, 4].set_ylabel(r'[$\mathrm{eV}$]')
             ax2[1, 4].set_title(f"Mean energy of sputtered {self.imp}", loc='right', fontsize = 11)
             ax2[1, 4].legend(loc="best", fontsize = 9).set_draggable(True)  
 
             ax2[2, 0].plot(self.time_out, PWI_traces["impurity_implantation_rate_divwall"], label="Total absorption rate", color = greens[0])
             ax2[2, 0].plot(self.time_out, PWI_traces["impurity_sputtering_rate_total_divwall"], label="Total release rate", color = blues[0])
             ax2[2, 0].plot(self.time_out, PWI_traces["impurity_implantation_rate_divwall"]-PWI_traces["impurity_sputtering_rate_total_divwall"], label="Balance", color = 'black')
-            ax2[2, 0].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax2[2, 0].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax2[2, 0].set_title(f"{self.imp} wall balance", loc='right', fontsize = 11)
             ax2[2, 0].legend(loc="best", fontsize = 9).set_draggable(True)
 
             ax2[2, 1].plot(self.time_out, PWI_traces["impurity_reflection_rate_divwall"], color = blues[0])
             if ylim:
                 ax2[2, 1].set_ylim(0,np.max(PWI_traces["impurity_reflection_rate_divwall"])*1.15)
-            ax2[2, 1].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax2[2, 1].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax2[2, 1].set_title(f"{self.imp} reflection rate from wall", loc='right', fontsize = 11)
 
             ax2[2, 2].plot(self.time_out, PWI_traces["impurity_prompt_recycling_rate_divwall"], color = blues[0])
             if ylim:
                 ax2[2, 2].set_ylim(0,np.max(PWI_traces["impurity_prompt_recycling_rate_divwall"])*1.15)
-            ax2[2, 2].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax2[2, 2].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax2[2, 2].set_title(f"{self.imp} prompt recycling rate from wall", loc='right', fontsize = 11)
             
             ax2[2, 3].plot(self.time_out, PWI_traces["impurity_implantation_rate_divwall"], color = blues[0])
             if ylim:
                 ax2[2, 3].set_ylim(0,np.max(PWI_traces["impurity_implantation_rate_divwall"])*1.15)
-            ax2[2, 3].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax2[2, 3].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax2[2, 3].set_title(f"{self.imp} implantation rate into wall", loc='right', fontsize = 11)
             
             ax2[2, 4].plot(self.time_out, PWI_traces["impurity_sputtering_rates_divwall"][:,0], label=f"from {self.imp}", color = blues[0])
@@ -688,12 +688,12 @@ class aurora_sim_pwi(core.aurora_sim):
                 ax2[2, 4].plot(self.time_out, PWI_traces["impurity_sputtering_rates_divwall"][:,i+1], label=f"from {background_species[i]}", color = blues[i+1])
             if ylim:
                 ax2[2, 4].set_ylim(0,np.max(PWI_traces["impurity_sputtering_rates_divwall"])*1.15)
-            ax2[2, 4].set_ylabel('[$\mathrm{s}^{-1}$]')
+            ax2[2, 4].set_ylabel(r'[$\mathrm{s}^{-1}$]')
             ax2[2, 4].set_title(f"{self.imp} sputtering rates from wall", loc='right', fontsize = 11)
             ax2[2, 4].legend(loc="best", fontsize = 9).set_draggable(True)
 
             for ii in [0, 1, 2, 3, 4]:
-                ax2[2, ii].set_xlabel('$\mathrm{time}$ [$\mathrm{s}$]')
+                ax2[2, ii].set_xlabel(r'$\mathrm{time}$ [$\mathrm{s}$]')
             ax2[2, 0].set_xlim(self.time_out[[0, -1]])  
             
             plt.tight_layout()

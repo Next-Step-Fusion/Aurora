@@ -29,6 +29,8 @@ from scipy.constants import m_p, e as q_electron
 from scipy.special import erfc
 import matplotlib.pyplot as plt
 
+from .elements import get_element_Z_A
+
 
 def get_source_time_history(namelist, Raxis_cm, time, plot = False):
     """Load source time history based on current state of the namelist.
@@ -149,7 +151,7 @@ def get_source_time_history(namelist, Raxis_cm, time, plot = False):
         fig, ax = plt.subplots()
         fig.suptitle('External particle source')
         ax.set_xlabel('time [s]')
-        ax.set_ylabel('$\Gamma_{{source}}$ [s$^{{-1}}$]'),
+        ax.set_ylabel(r'$\Gamma_{{source}}$ [s$^{{-1}}$]'),
         ax.plot(time, source)
         ax.set_ylim(0, None)
         ax.set_xlim(time[0],time[-1])
@@ -265,7 +267,7 @@ def lbo_source_function(t_start, t_rise, t_fall, n_particles=1.0, time_vec=None)
         lbo = np.exp((1 - 4 * tf * (T - ts) / tr**2) / (4 * (tf / tr) ** 2)) * (erfc((T - ts) / tr - 1 / (2 * tf / tr)) - 2)
 
         # scale source to correspond to the given total number of particles
-        lbo *= N / np.trapz(lbo, T)
+        lbo *= N / np.trapezoid(lbo, T)
 
         # ensure that source function ends with 0 to avoid numerical issues
         lbo[[0, -1]] = 0
@@ -353,13 +355,8 @@ def get_radial_source(namelist, rvol_grid, pro_grid, S_rates, Ti_eV=None):
             else:
                 raise ValueError("Could not compute a valid energy of injected ions!")
 
-        # import here to avoid issues with omfit_commonclasses during docs and package creation
-        from omfit_classes.utils_math import atomic_element
-
         # velocity of neutrals [cm/s]
-        out = atomic_element(symbol=namelist["imp"])
-        spec = list(out.keys())[0]
-        imp_ion_A = int(out[spec]["A"])
+        _, imp_ion_A = get_element_Z_A(namelist["imp"])
         v = -np.sqrt(2.0 * q_electron * E0 / (imp_ion_A * m_p)) * 100  # cm/s
 
         # integration of ne*S for atoms and calculation of ionization length for normalizing neutral density

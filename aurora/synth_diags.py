@@ -85,7 +85,7 @@ def line_int_weights(
         asym = 1.0
 
     # compute weights by summing over beam/ray path
-    weights = np.trapz(response[None] * asym, dist_path, axis=2)
+    weights = np.trapezoid(response[None] * asym, dist_path, axis=2)
 
     return weights
 
@@ -146,7 +146,7 @@ def centrifugal_asymmetry(
     nz : array (nr,nZ)
         Impurity charge state densities (output of Aurora at a specific time slice), only used for 2D plotting.
     geqdsk : dict
-        Dictionary containing the `omfit_classes.omfit_eqdsk` reading of the EFIT g-file.
+        Dictionary containing the processed EFIT g-file.
 
     Returns
     -------

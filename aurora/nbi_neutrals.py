@@ -28,7 +28,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 plt.ion()
-from scipy.interpolate import RectBivariateSpline, interp1d, interp2d
+from scipy.interpolate import RectBivariateSpline, interp1d, RegularGridInterpolator
+import scipy.integrate
 import copy, itertools
 
 from .janev_smith_rates import js_sigma
@@ -58,8 +59,8 @@ def get_neutrals_fsa(neutrals, geqdsk, debug_plots=True):
 
         It is currently assumed that n=0,1 and 2 beam components are provided by the user.
 
-    geqdsk : dictionary output of `omfit_classes.omfit_eqdsk.OMFITgeqdsk` class
-        gEQDSK post-processed dictionary, as given by `omfit_classes.omfit_eqdsk`.
+    geqdsk : dict
+        Processed gEQDSK dictionary containing the magnetic geometry.
     debug_plots : bool, optional
         If True, various plots are displayed.
 
@@ -97,6 +98,10 @@ def get_neutrals_fsa(neutrals, geqdsk, debug_plots=True):
 
     # extrapolate beam to cover the entire 2D poloidal cross section,
     # setting all neutral populations to 0 outside of the simulated region
+    iz_sort = np.argsort(zz)
+    ir_sort = np.argsort(rr)
+    Zmesh, Rmesh = np.meshgrid(Zgrid, Rgrid, indexing="ij")
+
     neutrals_ext = {}
     for beam in beams:
         neutrals_ext[beam] = {}
@@ -105,10 +110,16 @@ def get_neutrals_fsa(neutrals, geqdsk, debug_plots=True):
             for ii, name in enumerate(names):
                 dens = neutrals[beam][f"n={n_level}"][ii]
 
-                f = interp2d(
-                    rr, zz, dens.T, kind="linear", bounds_error=False, fill_value=0.0
+                # scipy's interp2d (removed in 1.14) sorted its axes and took the
+                # values as (len(y), len(x)); reproduce that on the (Z, R) grid.
+                f = RegularGridInterpolator(
+                    (zz[iz_sort], rr[ir_sort]),
+                    np.asarray(dens.T)[np.ix_(iz_sort, ir_sort)],
+                    method="linear",
+                    bounds_error=False,
+                    fill_value=0.0,
                 )
-                tmp = f(Rgrid, Zgrid)
+                tmp = f((Zmesh, Rmesh))
 
                 tmp[tmp < 0] = 0.0
                 neutrals_ext[beam][f"n={n_level}"][name] = tmp
@@ -626,6 +637,10 @@ def tt_rate_maxwell_average(sigma_fun, Ti_keV, m_i, m_n, n_level):
         mask = (
             Erel[:, ie] >= dE
         )  # no possible interaction below hydrogen ionization potential
+        if not mask.any():
+            # nothing selected: the assignment would be a no-op anyway, and passing
+            # an empty array down to scipy.integrate.simpson raises on scipy >= 1.18
+            continue
         sigma[mask, ie] = bt_rate_maxwell_average(
             sigma_fun, Ti_keV[mask], Erel[mask, ie], m_i, m_n, n_level
         )

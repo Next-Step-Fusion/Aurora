@@ -1,3 +1,4 @@
+outputs/
 *~
 *.pyc
 __pycache__
@@ -6,12 +7,6 @@ __pycache__
 .nfs*
 */#*
 */.#*
-
-# Aurora animations
-*.mp4
-
-# Sphinx documentation
-docs/_build/
 
 # PyPI dist
 dist/*
@@ -23,16 +18,8 @@ build/*
 aurora/adas_data/adf11/*
 aurora/adas_data/adf15/*
 
-# the DEGAS2 ehr5.dat file should not be exported
-ehr5.dat
-
 # don't upload packaging egg-info
 *egg-info/
-
-# Don't upload KN1D source code, available via Github, and temporary KN1D files
-aurora/KN1D
-*.sav
-*.pro
 
 # temporary g-files
 g123456.12345
@@ -50,4 +37,3 @@ junit
 
 # folder-related macbook files
 *.DS_Store
-docs/.idea/*
